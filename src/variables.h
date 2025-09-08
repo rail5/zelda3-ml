@@ -16,8 +16,36 @@
 #define TS_copy (*(uint8*)(g_ram+0x1D))
 #define TMW_copy (*(uint8*)(g_ram+0x1E))
 #define TSW_copy (*(uint8*)(g_ram+0x1F))
-#define link_y_coord (*(uint16*)(g_ram+0x20))
-#define link_x_coord (*(uint16*)(g_ram+0x22))
+
+
+/**
+ * EXPERIMENTAL CHANGE
+ *
+ * At the moment, this implementation allocates a massive contiguous block of memory,
+ * And assigns variables to arbitrary addresses within that block.
+ * This of course makes sense for a game programmed in assembly on the SNES,
+ * But for us using a combination of C and C++, allowing our higher-level languages to
+ * manage the memory is clearly the better and more hackable solution.
+ *
+ * There are some notable functions under the snes/ directory that rely on direct access
+ * to arbitrary addresses, e.g. cpu_read &co, but as far as I can tell,
+ * this functionality is designed for general-purpose SNES emulation, and is (I think)
+ * entirely unused by this PC port. So, it should be feasible to refactor this memory madness
+ * to use proper variables rather than dereferencing hardcoded addresses.
+ *
+ * Below is a small test of this:
+ * I removed the preprocessor macro that defines link_y_coord and link_x_coord
+ * as a dereference of a cast-to-uint16_t-pointer of an arbitrary address
+ * and replaced it with a direct declaration of a global uint16_t variable.
+ * So far, this appears to work perfectly, which is encouraging.
+ */
+
+//#define link_y_coord (*(uint16*)(g_ram+0x20))
+//#define link_x_coord (*(uint16*)(g_ram+0x22))
+extern uint16 link_y_coord;
+extern uint16 link_x_coord;
+
+
 #define link_z_coord (*(uint16*)(g_ram+0x24))
 #define link_direction_last (*(uint8*)(g_ram+0x26))
 #define link_actual_vel_y (*(uint8*)(g_ram+0x27))

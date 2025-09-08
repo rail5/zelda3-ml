@@ -654,7 +654,18 @@ void FadeMusicAndResetSRAMMirror() {  // 8cc2f0
   music_control = 0xf1;
   SetBackdropcolorBlack();
 
-  memset(&link_y_coord, 0, 0x70);
+  /**
+   * TODO(@rail5): Why is this memset here?
+   *
+   * We've commented this out to accommodate the experimental change mentioned in variables.h
+   *  (see variables.h for details)
+   * But I'm not entirely sure why we're deliberately overflowing a block of memory allocated as a 16-bit (2-byte) integer
+   *
+   * For now, the original memset call has been modified to run at the address originally given by the link_y_coord macro
+   * Since that macro has been replaced with an actual global variable.
+   */
+  // memset(&link_y_coord, 0, 0x70);
+  memset((g_ram+0x20), 0, 0x70);
   memset(save_dung_info, 0, 256 * 5);
 
   main_module_index = 1;
