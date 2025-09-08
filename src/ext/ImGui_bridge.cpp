@@ -1,6 +1,6 @@
 /**
  * Copyright (C) 2025 Andrew S. Rightenburg
- * GNU General Public License v3.0 or later
+ * MIT License
  */
 
 #include <SDL2/SDL_video.h>
@@ -94,8 +94,6 @@ extern "C" void ImGui_ShowToolbar() {
 			ImGui::Separator();
 			ImGui::Text("Forked by Andrew S. Rightenburg\n");
 			ImGui::Text("Original by snesrev, elzo_d\n");
-			ImGui::Separator();
-			ImGui::Text("This software is licensed under the GNU General Public License v3.0 or later.");
 			if (ImGui::Button("Close")) {
 				ImGui::CloseCurrentPopup();
 			}

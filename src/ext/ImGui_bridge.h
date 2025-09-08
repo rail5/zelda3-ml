@@ -1,6 +1,6 @@
 /**
  * Copyright (C) 2025 Andrew S. Rightenburg
- * GNU General Public License v3.0 or later
+ * MIT License
  */
 
 #pragma once
