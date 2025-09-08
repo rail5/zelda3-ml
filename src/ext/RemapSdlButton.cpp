@@ -1,4 +1,11 @@
+/**
+ * Copyright (C) 2025 Andrew S. Rightenburg
+ * GNU General Public License v3.0 or later
+ */
+
 #include <unordered_map>
+#include <filesystem>
+#include <fstream>
 #include <SDL2/SDL_gamecontroller.h>
 #include "RemapSdlButton.h"
 #include "../config.h"
@@ -36,4 +43,46 @@ extern "C" int RemapSdlButton(int button) {
 
 extern "C" void ChangeSdlButtonMapping(int sdlButton, int internalButton) {
 	buttonMapping[sdlButton] = internalButton;
+}
+
+/**
+ * We might like to store these button mappings in a config file so changes to the default mapping can be saved
+ */
+
+std::filesystem::path GetConfigFilePath() {
+	const char* homeDir = std::getenv("HOME");
+	if (!homeDir) {
+		homeDir = std::getenv("USERPROFILE"); // Windows fallback
+	}
+	if (!homeDir) {
+		throw std::runtime_error("Unable to determine home directory for config file.");
+	}
+	return std::filesystem::path(homeDir) / ".zelda3_button_config";
+}
+
+extern "C" void saveButtonConfig() {
+	std::filesystem::path configPath = GetConfigFilePath();
+	std::ofstream configFile(configPath);
+	if (!configFile.is_open()) {
+		throw std::runtime_error("Unable to open config file for writing.");
+	}
+	for (const auto& pair : buttonMapping) {
+		configFile << pair.first << "\t" << pair.second << "\n";
+	}
+}
+
+extern "C" void loadButtonConfig() {
+	std::filesystem::path configPath = GetConfigFilePath();
+	if (!std::filesystem::exists(configPath)) {
+		return; // No config file to load
+	}
+	std::ifstream configFile(configPath);
+	if (!configFile.is_open()) {
+		throw std::runtime_error("Unable to open config file for reading.");
+	}
+	buttonMapping.clear();
+	int sdlButton, internalButton;
+	while (configFile >> sdlButton >> internalButton) {
+		buttonMapping[sdlButton] = internalButton;
+	}
 }
