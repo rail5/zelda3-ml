@@ -3,3 +3,4 @@
 
 uint16 link_y_coord = 0;
 uint16 link_x_coord = 0;
+uint16 link_z_coord = 0;

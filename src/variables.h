@@ -42,11 +42,11 @@
 
 //#define link_y_coord (*(uint16*)(g_ram+0x20))
 //#define link_x_coord (*(uint16*)(g_ram+0x22))
+//#define link_z_coord (*(uint16*)(g_ram+0x24))
 extern uint16 link_y_coord;
 extern uint16 link_x_coord;
+extern uint16 link_z_coord;
 
-
-#define link_z_coord (*(uint16*)(g_ram+0x24))
 #define link_direction_last (*(uint8*)(g_ram+0x26))
 #define link_actual_vel_y (*(uint8*)(g_ram+0x27))
 #define link_actual_vel_x (*(uint8*)(g_ram+0x28))
