@@ -1,13 +1,23 @@
 TARGET_EXEC:=zelda3
 ROM:=tables/zelda3.sfc
+
 SRCS:=$(wildcard src/*.c snes/*.c) third_party/gl_core/gl_core_3_1.c third_party/opus-1.3.1-stripped/opus_decoder_amalgam.c
 EXTRA_SRCS:=$(wildcard src/ext/*.cpp)
+
 OBJS:=$(SRCS:%.c=%.o)
 EXTRA_OBJS:=$(EXTRA_SRCS:%.cpp=%.opp) # .opp for C++ object files to distinguish them from .o C object files
+
 PYTHON:=/usr/bin/env python3
+
 CFLAGS:=$(if $(CFLAGS),$(CFLAGS),-O2 -Werror) -I .
 CFLAGS:=${CFLAGS} $(shell sdl2-config --cflags) -DSYSTEM_VOLUME_MIXER_AVAILABLE=0
-CXXFLAGS:=$(CFLAGS) -std=c++23 -O2 -s -Wall -Wextra
+
+IMGUI_IFLAGS:=$(shell pkg-config --cflags imgui)
+IMGUI_LDFLAGS:=$(shell pkg-config --libs imgui)
+
+CXXFLAGS:=$(CFLAGS) $(IMGUI_IFLAGS) -std=c++23 -O2 -s -Wall -Wextra
+
+LDFLAGS:=$(IMGUI_LDFLAGS)
 
 CC:=gcc
 CXX:=g++

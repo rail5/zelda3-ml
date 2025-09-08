@@ -1,11 +1,14 @@
 #include "third_party/gl_core/gl_core_3_1.h"
 #include <SDL.h>
+#include <SDL2/SDL_video.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "types.h"
 #include "util.h"
 #include "glsl_shader.h"
 #include "config.h"
+
+#include "ext/ImGui_bridge.h"
 
 #define CODE(...) #__VA_ARGS__
 
@@ -38,6 +41,7 @@ static void GL_APIENTRY MessageCallback(GLenum source,
 static bool OpenGLRenderer_Init(SDL_Window *window) {
   g_window = window;
   SDL_GLContext context = SDL_GL_CreateContext(window);
+  gl_context = context;
   (void)context;
 
   SDL_GL_SetSwapInterval(1);
@@ -239,6 +243,11 @@ static void OpenGLRenderer_EndDraw() {
   } else {
     GlslShader_Render(g_glsl_shader, &g_texture, viewport_x, viewport_y, viewport_width, viewport_height);
   }
+
+  // Before we wrap up, go ahead and draw the toolbar
+  ImGui_BeginFrame(g_window);
+  ImGui_ShowToolbar();
+  ImGui_EndFrame();
 
   SDL_GL_SwapWindow(g_window);
 }

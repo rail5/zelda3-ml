@@ -28,6 +28,7 @@
 #include "audio.h"
 
 #include "ext/RemapSdlButton.h"
+#include "ext/ImGui_bridge.h"
 
 static bool g_run_without_emu = 0;
 
@@ -337,6 +338,9 @@ int main(int argc, char** argv) {
   int window_width  = custom_size ? g_config.window_width  : g_current_window_scale * g_snes_width;
   int window_height = custom_size ? g_config.window_height : g_current_window_scale * g_snes_height;
 
+  // Forcibly use OpenGL.
+  g_config.output_method = kOutputMethod_OpenGL;
+
   if (g_config.output_method == kOutputMethod_OpenGL ||
       g_config.output_method == kOutputMethod_OpenGL_ES) {
     g_win_flags |= SDL_WINDOW_OPENGL;
@@ -403,6 +407,7 @@ int main(int argc, char** argv) {
 
   while(running) {
     while(SDL_PollEvent(&event)) {
+      ImGui_ProcessEvent(&event);
       switch(event.type) {
       case SDL_CONTROLLERDEVICEADDED:
         OpenOneGamepad(event.cdevice.which);
