@@ -1,7 +1,27 @@
-# Zelda3
-A reimplementation of Zelda 3.
+# Zelda3-ml
 
-Our discord server is: https://discord.gg/AJJbJAzNNJ
+This is a personal fork of [https://github.com/snesrev/zelda3](snesrev's Alttp PC port) with some additional features.
+
+I have not built or tested any changes outside of GNU/Linux, and I don't imagine this will run on Windows or MacOS without some work. I'm not familiar enough with those operating systems to provide support.
+
+So far, this fork has added:
+
+ - A button remapping GUI using ImGui
+ - Some makefile conveniences
+
+## Build Instructions
+
+You will need SDL2 and ImGui:
+
+```sh
+sudo apt install libsdl2-dev libimgui-dev
+```
+
+Then just run `make` in the project root to produce the `zelda3` binary.
+
+&nbsp;
+
+Below is the original README from snesrev's repository.
 
 ## About
 
