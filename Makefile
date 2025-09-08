@@ -70,5 +70,5 @@ clean_gen:
 	@rm -rf tables/__pycache__ tables/dungeon tables/img tables/overworld tables/sound
 
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
--include $(shell find bin -name '*.d' 2>/dev/null)
+-include $(shell find . -name '*.d' 2>/dev/null)
 endif
