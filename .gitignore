@@ -33,3 +33,4 @@ __pycache__
 /glsl-shaders
 /token.txt
 /imgui.ini
+**/*.d

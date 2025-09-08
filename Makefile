@@ -9,7 +9,7 @@ EXTRA_OBJS:=$(EXTRA_SRCS:%.cpp=%.opp) # .opp for C++ object files to distinguish
 
 PYTHON:=/usr/bin/env python3
 
-CFLAGS:=$(if $(CFLAGS),$(CFLAGS),-O2 -Werror) -I .
+CFLAGS:=$(if $(CFLAGS),$(CFLAGS),-O2 -Werror) -I . -MMD -MP
 CFLAGS:=${CFLAGS} $(shell sdl2-config --cflags) -DSYSTEM_VOLUME_MIXER_AVAILABLE=0
 
 IMGUI_IFLAGS:=$(shell pkg-config --cflags imgui)
@@ -68,3 +68,7 @@ clean_obj:
 clean_gen:
 	@$(RM) $(RES) zelda3_assets.dat tables/zelda3_assets.dat tables/*.txt tables/*.png tables/sprites/*.png tables/*.yaml
 	@rm -rf tables/__pycache__ tables/dungeon tables/img tables/overworld tables/sound
+
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+-include $(shell find bin -name '*.d' 2>/dev/null)
+endif
