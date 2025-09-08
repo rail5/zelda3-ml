@@ -80,9 +80,8 @@ extern "C" void loadButtonConfig() {
 	if (!configFile.is_open()) {
 		throw std::runtime_error("Unable to open config file for reading.");
 	}
-	buttonMapping.clear();
 	int sdlButton, internalButton;
 	while (configFile >> sdlButton >> internalButton) {
-		buttonMapping[sdlButton] = internalButton;
+		ChangeSdlButtonMapping(sdlButton, internalButton);
 	}
 }
