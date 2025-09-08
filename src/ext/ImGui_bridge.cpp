@@ -10,6 +10,8 @@
 
 #include "ImGui_bridge.h"
 
+#include "RemapSdlButton.h"
+
 static ImGuiContext* g_ImGuiContext = nullptr;
 SDL_GLContext gl_context = nullptr;
 static bool g_ImGuiInitialized = false;
@@ -41,6 +43,12 @@ extern "C" void ImGui_EndFrame() {
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+static bool show_about_dialog = false;
+static bool show_controller_mapping_dialog = false;
+
+bool remapping_active = false;
+int remapping_internal_button = kGamepadBtn_Invalid;
+
 extern "C" void ImGui_ShowToolbar() {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -52,6 +60,7 @@ extern "C" void ImGui_ShowToolbar() {
 		if (ImGui::BeginMenu("Edit")) {
 			if (ImGui::MenuItem("Controller Mapping", "Ctrl+M")) {
 				// Bring up controller mapping dialog
+				show_controller_mapping_dialog = true;
 			}
 			ImGui::EndMenu();
 		}
@@ -64,10 +73,93 @@ extern "C" void ImGui_ShowToolbar() {
 		if (ImGui::BeginMenu("Help")) {
 			if (ImGui::MenuItem("About", "F1")) {
 				// Show about dialog
+				show_about_dialog = true;
 			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
+
+		if (show_about_dialog) {
+			ImGui::OpenPopup("About");
+			show_about_dialog = false;
+		}
+
+		if (show_controller_mapping_dialog) {
+			ImGui::OpenPopup("Controller Mapping");
+			show_controller_mapping_dialog = false;
+		}
+
+		if (ImGui::BeginPopupModal("About", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+			ImGui::Text("The Legend of Zelda: A Link to the Past PC Port\n");
+			ImGui::Separator();
+			ImGui::Text("Forked by Andrew S. Rightenburg\n");
+			ImGui::Text("Original by snesrev, elzo_d\n");
+			ImGui::Separator();
+			ImGui::Text("This software is licensed under the GNU General Public License v3.0 or later.");
+			if (ImGui::Button("Close")) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::BeginPopupModal("Controller Mapping", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+			ImGui::Dummy(ImVec2(500, 0)); // Forces minimum width
+			ImGui::Text("Controller Mapping Configuration\n");
+			ImGui::Separator();
+			
+			// Table header
+			ImGui::Columns(3, "ControllerMappingTable");
+			ImGui::Text("Internal Button"); ImGui::NextColumn();
+			ImGui::Text("Controller Mapping"); ImGui::NextColumn();
+			ImGui::Text("Change"); ImGui::NextColumn();
+			ImGui::Separator();
+
+			// Iterate over internal buttons in order
+			for (const auto& internalPair : internalButtonNames) {
+			    int internalButton = internalPair.first;
+
+				if (internalButton == kGamepadBtn_Invalid)
+					continue;
+
+			    const std::string& internalName = internalPair.second;
+
+			    // Find which SDL button is mapped to this internal button
+			    int mappedSdlButton = -1;
+			    for (const auto& pair : buttonMapping) {
+			        if (pair.second == internalButton) {
+			            mappedSdlButton = pair.first;
+			            break;
+			        }
+			    }
+
+			    std::string sdlName = (sdlButtonNames.count(mappedSdlButton)) ? sdlButtonNames.at(mappedSdlButton) : "Unmapped";
+
+			    ImGui::Text("%s", internalName.c_str());
+			    ImGui::NextColumn();
+			    ImGui::Text("%s", sdlName.c_str());
+			    ImGui::NextColumn();
+
+			    if (remapping_active && remapping_internal_button == internalButton) {
+			        ImGui::Text("Press a button...");
+			    } else {
+			        if (ImGui::Button(("Change##" + std::to_string(internalButton)).c_str())) {
+			            remapping_active = true;
+			            remapping_internal_button = internalButton;
+			        }
+			    }
+			    ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+
+			if (ImGui::Button("Save Configuration")) {
+				saveButtonConfig();
+			}
+
+			if (ImGui::Button("Close")) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
 	}
 }
 

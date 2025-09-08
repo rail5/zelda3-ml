@@ -5,17 +5,28 @@
 
 #pragma once
 
-#include "ext.h"
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
+#include "../config.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern SDL_GLContext gl_context;
 
-EXTERN_C void ImGui_BeginFrame(SDL_Window* window);
-EXTERN_C void ImGui_EndFrame();
-EXTERN_C void ImGui_ShowToolbar();
-EXTERN_C void ImGui_ProcessEvent(const SDL_Event* event);
+void ImGui_BeginFrame(SDL_Window* window);
+void ImGui_EndFrame();
+void ImGui_ShowToolbar();
+void ImGui_ProcessEvent(const SDL_Event* event);
 
-EXTERN_C bool ImGui_WantCaptureMouse();
-EXTERN_C bool ImGui_WantCaptureKeyboard();
+bool ImGui_WantCaptureMouse();
+bool ImGui_WantCaptureKeyboard();
+
+extern bool remapping_active;
+extern int remapping_internal_button;
+
+#ifdef __cplusplus
+}
+#endif

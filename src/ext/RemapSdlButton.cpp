@@ -3,19 +3,16 @@
  * GNU General Public License v3.0 or later
  */
 
-#include <unordered_map>
 #include <filesystem>
 #include <fstream>
-#include <SDL2/SDL_gamecontroller.h>
 #include "RemapSdlButton.h"
-#include "../config.h"
 
 /**
  * Declare a global unordered_map to hold the button mappings.
  * This map can be modified at runtime if needed
  */
 
-inline std::unordered_map<int, int> buttonMapping = {
+std::unordered_map<int, int> buttonMapping = {
 	{SDL_CONTROLLER_BUTTON_A, kGamepadBtn_A},
 	{SDL_CONTROLLER_BUTTON_B, kGamepadBtn_B},
 	{SDL_CONTROLLER_BUTTON_X, kGamepadBtn_X},
@@ -78,7 +75,7 @@ extern "C" void loadButtonConfig() {
 	}
 	std::ifstream configFile(configPath);
 	if (!configFile.is_open()) {
-		throw std::runtime_error("Unable to open config file for reading.");
+		return; // Fail open, just use defaults
 	}
 	int sdlButton, internalButton;
 	while (configFile >> sdlButton >> internalButton) {

@@ -395,6 +395,9 @@ int main(int argc, char** argv) {
   for (int i = 0; i < SDL_NumJoysticks(); i++)
     OpenOneGamepad(i);
 
+  // Initialize gamepad config (controller mappings)
+  loadButtonConfig();
+
   bool running = true;
   SDL_Event event;
   uint32 lastTick = SDL_GetTicks();
@@ -408,6 +411,15 @@ int main(int argc, char** argv) {
   while(running) {
     while(SDL_PollEvent(&event)) {
       ImGui_ProcessEvent(&event);
+
+      // Button re-mapping?
+      if (remapping_active && event.type == SDL_CONTROLLERBUTTONDOWN) {
+          int sdlButton = event.cbutton.button;
+          ChangeSdlButtonMapping(sdlButton, remapping_internal_button);
+          remapping_active = false;
+          remapping_internal_button = kGamepadBtn_Invalid;
+      }
+
       bool want_capture_keyboard = ImGui_WantCaptureKeyboard();
       bool want_capture_mouse = ImGui_WantCaptureMouse();
       switch(event.type) {
