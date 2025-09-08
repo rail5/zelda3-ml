@@ -19,6 +19,7 @@
 /zelda3
 __pycache__
 /src/*.o
+/src/ext/*.opp
 /*.exe
 /*.out
 /snes/*.o
