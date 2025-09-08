@@ -1,6 +1,6 @@
 # Zelda3-ml
 
-This is a personal fork of [https://github.com/snesrev/zelda3](snesrev's Alttp PC port) with some additional features.
+This is a personal fork of [snesrev's Alttp PC port](https://github.com/snesrev/zelda3) with some additional features.
 
 I have not built or tested any changes outside of GNU/Linux, and I don't imagine this will run on Windows or MacOS without some work. I'm not familiar enough with those operating systems to provide support.
 
