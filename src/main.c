@@ -355,7 +355,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   g_window = window;
-  SDL_SetWindowHitTest(window, HitTestCallback, NULL);
+ // SDL_SetWindowHitTest(window, HitTestCallback, NULL);
 
   if (!g_renderer_funcs.Initialize(window))
     return 1;
@@ -408,6 +408,8 @@ int main(int argc, char** argv) {
   while(running) {
     while(SDL_PollEvent(&event)) {
       ImGui_ProcessEvent(&event);
+      bool want_capture_keyboard = ImGui_WantCaptureKeyboard();
+      bool want_capture_mouse = ImGui_WantCaptureMouse();
       switch(event.type) {
       case SDL_CONTROLLERDEVICEADDED:
         OpenOneGamepad(event.cdevice.which);
@@ -423,10 +425,14 @@ int main(int argc, char** argv) {
         break;
       }
       case SDL_MOUSEWHEEL:
+        if (want_capture_mouse)
+          break;
         if (SDL_GetModState() & KMOD_CTRL && event.wheel.y != 0)
           ChangeWindowScale(event.wheel.y > 0 ? 1 : -1);
         break;
       case SDL_MOUSEBUTTONDOWN:
+        if (want_capture_mouse)
+          break;
         if (event.button.button == SDL_BUTTON_LEFT && event.button.state == SDL_PRESSED && event.button.clicks == 2) {
           if ((g_win_flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == 0 && (g_win_flags & SDL_WINDOW_FULLSCREEN) == 0 && SDL_GetModState() & KMOD_SHIFT) {
             g_win_flags ^= SDL_WINDOW_BORDERLESS;
@@ -435,9 +441,13 @@ int main(int argc, char** argv) {
         }
         break;
       case SDL_KEYDOWN:
+      if (want_capture_keyboard)
+          break;
         HandleInput(event.key.keysym.sym, event.key.keysym.mod, true);
         break;
       case SDL_KEYUP:
+        if (want_capture_keyboard)
+          break;
         HandleInput(event.key.keysym.sym, event.key.keysym.mod, false);
         break;
       case SDL_QUIT:

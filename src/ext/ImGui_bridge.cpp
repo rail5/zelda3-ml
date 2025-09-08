@@ -44,17 +44,26 @@ extern "C" void ImGui_EndFrame() {
 extern "C" void ImGui_ShowToolbar() {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("Open ROM", "Ctrl+O")) {
-				// Handle Open ROM action
-			}
 			if (ImGui::MenuItem("Exit", "Alt+F4")) {
 				// Handle Exit action
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Edit")) {
+			if (ImGui::MenuItem("Controller Mapping", "Ctrl+M")) {
+				// Bring up controller mapping dialog
 			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View")) {
 			if (ImGui::MenuItem("Toggle Fullscreen", "F11")) {
 				// Handle Toggle Fullscreen action
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Help")) {
+			if (ImGui::MenuItem("About", "F1")) {
+				// Show about dialog
 			}
 			ImGui::EndMenu();
 		}
@@ -66,4 +75,16 @@ extern "C" void ImGui_ProcessEvent(const SDL_Event* event) {
 	if (!g_ImGuiInitialized)
 		return;
 	ImGui_ImplSDL2_ProcessEvent(event);
+}
+
+extern "C" bool ImGui_WantCaptureMouse() {
+	if (!g_ImGuiInitialized)
+		return false;
+	return ImGui::GetIO().WantCaptureMouse;
+}
+
+extern "C" bool ImGui_WantCaptureKeyboard() {
+	if (!g_ImGuiInitialized)
+		return false;
+	return ImGui::GetIO().WantCaptureKeyboard;
 }

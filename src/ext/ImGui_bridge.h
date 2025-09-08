@@ -16,3 +16,6 @@ EXTERN_C void ImGui_BeginFrame(SDL_Window* window);
 EXTERN_C void ImGui_EndFrame();
 EXTERN_C void ImGui_ShowToolbar();
 EXTERN_C void ImGui_ProcessEvent(const SDL_Event* event);
+
+EXTERN_C bool ImGui_WantCaptureMouse();
+EXTERN_C bool ImGui_WantCaptureKeyboard();
