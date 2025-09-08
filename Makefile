@@ -57,17 +57,20 @@ zelda3_assets.dat: venv
 	$(PYTHON) assets/restool.py --extract-from-rom
 
 
-clean: clean_obj clean_gen clean_venv
+clean: clean_obj clean_gen clean_venv clean_d_files
 
 clean_venv:
 	@rm -rf venv
 
 clean_obj:
-	@$(RM) $(OBJS) $(TARGET_EXEC)
+	@$(RM) $(OBJS) $(EXTRA_OBJS) $(TARGET_EXEC)
 
 clean_gen:
 	@$(RM) $(RES) zelda3_assets.dat tables/zelda3_assets.dat tables/*.txt tables/*.png tables/sprites/*.png tables/*.yaml
 	@rm -rf tables/__pycache__ tables/dungeon tables/img tables/overworld tables/sound
+
+clean_d_files:
+	@ find . -name '*.d' -exec rm -f {} \;
 
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 -include $(shell find . -name '*.d' 2>/dev/null)
