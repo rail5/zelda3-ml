@@ -22,15 +22,21 @@ $(TARGET_EXEC): $(OBJS) $(RES)
 %.o : %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
+venv:
+	@$(PYTHON) -m venv venv
+	@./venv/bin/python3 -m pip install -r requirements.txt
+
 $(RES): src/platform/win32/zelda3.rc
 	@echo "Generating Windows resources"
 	@$(WINDRES) $< -O coff -o $@
 
-zelda3_assets.dat:
+zelda3_assets.dat: venv
 	@echo "Extracting game resources"
 	$(PYTHON) assets/restool.py --extract-from-rom
 
-clean: clean_obj clean_gen
+clean: clean_obj clean_gen clean_venv
+clean_venv:
+	@rm -rf venv
 clean_obj:
 	@$(RM) $(OBJS) $(TARGET_EXEC)
 clean_gen:
