@@ -29,6 +29,7 @@
 
 #include "ext/RemapSdlButton.h"
 #include "ext/ImGui_bridge.h"
+#include "ext/GameRAM.h"
 
 static bool g_run_without_emu = 0;
 
@@ -457,6 +458,16 @@ int main(int argc, char** argv) {
         whichController.controllerID = event.cbutton.which;
         whichController.type = CT_GameController;
         int b = ResolveSdlButton(whichController, event.cbutton.button);
+
+        // DEBUG TESTING:
+        // L1: Switch player
+        // R1: SHOULDER button: init multi
+        if (b == kGamepadBtn_L1 && event.type == SDL_CONTROLLERBUTTONDOWN) {
+          switch_player();
+        } else if (b == kGamepadBtn_R1 && event.type == SDL_CONTROLLERBUTTONDOWN) {
+          _test_init_multi();
+        }
+
         if (b >= 0)
           HandleGamepadInput(b, event.type == SDL_CONTROLLERBUTTONDOWN);
         break;

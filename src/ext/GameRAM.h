@@ -25,13 +25,33 @@ extern "C" {
 
 struct GameRAM {
 	uint8_t data[131072];
+
+	uint8_t player1_state[0x52];
+	uint8_t player2_state[0x52];
+
+	bool use_player2;
+
 	#ifdef __cplusplus
 	uint8_t& operator[](size_t index);
+
+	GameRAM() : data{}, player1_state{}, player2_state{}, use_player2(false) {} // zero-initialize
+
+	void setPlayer(int player); // 1 or 2
+	void togglePlayer();
+
+	void resetPlayerStates();
+
+	private:
+	void copyPlayerStateToRAM();
+	void copyRAMToPlayerState();
 	#endif
 };
 
 extern struct GameRAM game_ram;
 uint8_t* g_ram_access(size_t idx);
+
+void switch_player();
+void _test_init_multi();
 
 #ifdef __cplusplus
 }

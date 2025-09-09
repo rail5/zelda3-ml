@@ -23,6 +23,9 @@
 #define TS_copy (*(uint8*)(g_ram_access(0x1D)))
 #define TMW_copy (*(uint8*)(g_ram_access(0x1E)))
 #define TSW_copy (*(uint8*)(g_ram_access(0x1F)))
+
+// PLAYER STATE VARIABLES
+// 0x20 - 0x71(?)
 #define link_y_coord (*(uint16*)(g_ram_access(0x20)))
 #define link_x_coord (*(uint16*)(g_ram_access(0x22)))
 #define link_z_coord (*(uint16*)(g_ram_access(0x24)))
@@ -89,6 +92,8 @@
 #define moving_against_diag_deadlocked (*(uint8*)(g_ram_access(0x6D)))
 #define tiledetect_diag_state (*(uint16*)(g_ram_access(0x6E)))
 #define byte_7E0071 (*(uint8*)(g_ram_access(0x71)))
+
+
 #define scratch_b (*(uint8*)(g_ram_access(0x72)))
 #define scratch_a (*(uint8*)(g_ram_access(0x73)))
 #define scratch_c (*(uint8*)(g_ram_access(0x74)))
