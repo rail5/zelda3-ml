@@ -20,6 +20,7 @@
 
 #ifdef __cplusplus
 #include <cstddef>
+#include <filesystem>
 extern "C" {
 #endif
 
@@ -41,6 +42,9 @@ struct GameRAM {
 
 	void resetPlayerStates();
 
+	uint8_t* getPlayerStates(); // Size: 0xA5
+	void loadState(const uint8_t* state);
+
 	private:
 	void copyPlayerStateToRAM();
 	void copyRAMToPlayerState();
@@ -52,6 +56,10 @@ uint8_t* g_ram_access(size_t idx);
 
 void switch_player();
 void _test_init_multi();
+
+uint8_t* g_ram_snapshot_for_savestate();
+void load_g_ram_snapshot_from_savestate(const uint8_t* snapshot);
+void g_ram_snapshot_free(uint8_t* ptr);
 
 #ifdef __cplusplus
 }

@@ -4,6 +4,7 @@
  */
 
 #include "GameRAM.h"
+#include <cstdint>
 #include <cstring>
 
 GameRAM game_ram;
@@ -45,6 +46,34 @@ void GameRAM::copyPlayerStateToRAM() {
 	std::memcpy(&data[0x20], player_state, 0x52); // 0x71 - 0x20 + 1 = 0x52
 }
 
+/**
+ * SAVESTATES
+ *
+ * Savestates are mostly handled by the main program code.
+ * But since we're storing extra state here, we should report what we have
+ * These functions will be called by the main code (src/zelda_rtl.c: StateRecorder_Save / StateRecorder_Load)
+ */
+uint8_t* GameRAM::getPlayerStates() {
+	// Total size: 0x52 (player 1) + 0x52 (player 2) + 1 (which player) = 0xA5
+	uint8_t* snapshot = new uint8_t[0xA5]; // Caller is responsible for deleting this memory
+	// Should call g_ram_snapshot_free() when done
+
+	copyRAMToPlayerState(); // Ensure current player's state is up to date
+
+	std::memcpy(snapshot, player1_state, 0x52);
+	std::memcpy(snapshot + 0x52, player2_state, 0x52);
+	snapshot[0xA4] = use_player2 ? 1 : 0;
+	return snapshot;
+}
+
+void GameRAM::loadState(const uint8_t* state) {
+	// Expecting a buffer of size 0xA5
+	std::memcpy(player1_state, state, 0x52);
+	std::memcpy(player2_state, state + 0x52, 0x52);
+	use_player2 = (state[0xA4] != 0);
+	copyPlayerStateToRAM(); // Load the selected player's state into RAM
+}
+
 uint8_t* g_ram_access(size_t idx) {
 	return &game_ram[idx];
 }
@@ -55,4 +84,16 @@ void switch_player() {
 
 void _test_init_multi() {
 	game_ram.resetPlayerStates(); // To avoid uninitialized memory issues
+}
+
+uint8_t* g_ram_snapshot_for_savestate() {
+	return game_ram.getPlayerStates();
+}
+
+void load_g_ram_snapshot_from_savestate(const uint8_t* snapshot) {
+	game_ram.loadState(snapshot);
+}
+
+void g_ram_snapshot_free(uint8_t* ptr) {
+	delete[] ptr;
 }

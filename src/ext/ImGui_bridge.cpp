@@ -7,10 +7,12 @@
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
+#include <filesystem>
 
 #include "ImGui_bridge.h"
-
 #include "RemapSdlButton.h"
+
+#include "../zelda_rtl.h"
 
 static ImGuiContext* g_ImGuiContext = nullptr;
 SDL_GLContext gl_context = nullptr;
@@ -43,6 +45,19 @@ extern "C" void ImGui_EndFrame() {
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+std::filesystem::path getSaveStatePath(int slot) {
+	const char* homeDir = std::getenv("HOME");
+	if (!homeDir) {
+		homeDir = std::getenv("USERPROFILE"); // Windows fallback
+	}
+	if (!homeDir) {
+		throw std::runtime_error("Unable to determine home directory for config file.");
+	}
+
+	std::string saveStateFileName = ".zelda3_" + std::to_string(slot) + ".sav";
+	return std::filesystem::path(homeDir) / saveStateFileName;
+}
+
 static bool show_about_dialog = false;
 static bool show_controller_mapping_dialog = false;
 
@@ -62,6 +77,33 @@ extern "C" void ImGui_ShowToolbar() {
 				// Bring up controller mapping dialog
 				show_controller_mapping_dialog = true;
 			}
+
+			if (ImGui::BeginMenu("Save State")) {
+				if (ImGui::MenuItem("Save to Slot 1", "Shift+F1")) {
+					SaveLoadSlot(kSaveLoad_Save, 1);
+				}
+				if (ImGui::MenuItem("Save to Slot 2", "Shift+F2")) {
+					SaveLoadSlot(kSaveLoad_Save, 2);
+				}
+				if (ImGui::MenuItem("Save to Slot 3", "Shift+F3")) {
+					SaveLoadSlot(kSaveLoad_Save, 3);
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Load State")) {
+				if (ImGui::MenuItem("Load from Slot 1", "F1")) {
+					SaveLoadSlot(kSaveLoad_Load, 1);
+				}
+				if (ImGui::MenuItem("Load from Slot 2", "F2")) {
+					SaveLoadSlot(kSaveLoad_Load, 2);
+				}
+				if (ImGui::MenuItem("Load from Slot 3", "F3")) {
+					SaveLoadSlot(kSaveLoad_Load, 3);
+				}
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View")) {

@@ -12,6 +12,8 @@
 #include "util.h"
 #include "audio.h"
 #include "assets.h"
+
+#include "ext/GameRAM.h"
 ZeldaEnv g_zenv;
 
 uint32 g_wanted_zelda_features;
@@ -528,6 +530,11 @@ void StateRecorder_Load(StateRecorder *sr, FILE *f, bool replay_mode) {
     ByteArray_Destroy(&arr);
     assert(state.p == state.pend);
   }
+
+  // Load g_ram state from file
+  uint8_t g_ram_snapshot[0xA5];
+  ReadFromFile(f, g_ram_snapshot, sizeof(g_ram_snapshot));
+  load_g_ram_snapshot_from_savestate(g_ram_snapshot);
 }
 
 void StateRecorder_Save(StateRecorder *sr, FILE *f) {
@@ -554,6 +561,11 @@ void StateRecorder_Save(StateRecorder *sr, FILE *f) {
   fwrite(sr->log.data, 1, hdr[2], f);
   fwrite(sr->base_snapshot.data, 1, sr->base_snapshot.size, f);
   fwrite(arr.data, 1, arr.size, f);
+
+  // Copy g_ram state
+  uint8_t* g_ram_copy = g_ram_snapshot_for_savestate(); // Size: 0xA5
+  fwrite(g_ram_copy, 1, 0xA5, f);
+  g_ram_snapshot_free(g_ram_copy); // Free the temporary copy
 
   ByteArray_Destroy(&arr);
 }

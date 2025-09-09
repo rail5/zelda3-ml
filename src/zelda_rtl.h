@@ -32,7 +32,10 @@ extern int frame_ctr_dbg;
 typedef void PlayerHandlerFunc();
 typedef void HandlerFuncK(int k);
 
-static inline void zelda_snes_dummy_write(uint32 adr, uint8 val) {}
+static inline void zelda_snes_dummy_write(uint32 adr, uint8 val) {
+  (void)adr;
+  (void)val;
+}
 
 void zelda_apu_write(uint32_t adr, uint8_t val);
 uint8_t zelda_read_apui00();
@@ -65,7 +68,16 @@ enum {
   kSaveLoad_Replay = 2,
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void SaveLoadSlot(int cmd, int which);
+
+#ifdef __cplusplus
+}
+#endif
+
 void ZeldaWriteSram();
 void ZeldaReadSram();
 
