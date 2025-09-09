@@ -15,7 +15,7 @@
 
 std::unordered_map<ControllerKey, std::unordered_map<int, int>> controllerButtonMappings; // Key: controller ID, Value: button map
 
-extern "C" int RemapSdlButton(ControllerKey controllerID, int button) {
+extern "C" int ResolveSdlButton(ControllerKey controllerID, int button) {
 	auto ctrlIt = controllerButtonMappings.find(controllerID);
 	if (ctrlIt != controllerButtonMappings.end()) {
 		auto btnIt = ctrlIt->second.find(button);

@@ -105,7 +105,7 @@ static const std::map<int, std::string> internalButtonNames = {
 extern "C" {
 #endif
 
-int RemapSdlButton(struct ControllerKey controllerID, int button);
+int ResolveSdlButton(struct ControllerKey controllerID, int button);
 void ChangeSdlButtonMapping(struct ControllerKey controllerID, int sdlButton, int internalButton);
 
 void saveButtonConfig();

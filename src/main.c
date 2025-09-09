@@ -456,7 +456,7 @@ int main(int argc, char** argv) {
         struct ControllerKey whichController;
         whichController.controllerID = event.cbutton.which;
         whichController.type = CT_GameController;
-        int b = RemapSdlButton(whichController, event.cbutton.button);
+        int b = ResolveSdlButton(whichController, event.cbutton.button);
         if (b >= 0)
           HandleGamepadInput(b, event.type == SDL_CONTROLLERBUTTONDOWN);
         break;
@@ -467,7 +467,7 @@ int main(int argc, char** argv) {
         struct ControllerKey whichController;
         whichController.controllerID = event.jbutton.which;
         whichController.type = CT_Joystick;
-        int b = RemapSdlButton(whichController, event.jbutton.button);
+        int b = ResolveSdlButton(whichController, event.jbutton.button);
         if (b >= 0)
           HandleGamepadInput(b, event.type == SDL_JOYBUTTONDOWN);
         break;
