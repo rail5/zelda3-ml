@@ -11,6 +11,13 @@ So far, this fork has added:
  - Support for SDL_Joystick devices (e.g., off-brand controllers that don't register as SDL_GameController)
  - Some makefile conveniences
 
+Less visible differences:
+ - A fundamental refactoring of the program's low-level memory model
+   - The original program stored all of the game RAM in a single large array, and used macros to access individual variables. This was presumably done to accurately mimic the original SNES memory map.
+   - This fork replaces this with a (hidden) C++ data structure than can be accessed and indexed in the same way, but allows for optionally-added internal logic on access.
+   - One thing that may be possible with this, for example, is to override accesses to certain memory regions. E.g., if the game asks for the memory stored at address X, we could choose to return the value actually stored there in the game RAM, or we might choose to compute a new value on-the-fly, etc.
+   - Hopefully, this will make it easier to add multiplayer support in the future, by overriding access to memory regions associated with the player state, so that we can keep multiple players' states separately and return the appropriate one based on context.
+
 ## Build Instructions
 
 You will need SDL2 and ImGui:
