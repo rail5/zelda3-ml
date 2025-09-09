@@ -25,11 +25,11 @@ static const uint8 kTagalongLayerBits[4] = {0x20, 0x10, 0x30, 0x20};
 static const uint8 kBombos_Sfx[8] = {0x80, 0x80, 0x80, 0, 0, 0x40, 0x40, 0x40};
 const uint8 kBomb_Tab0[11] = {0xA0, 6, 4, 4, 4, 4, 4, 6, 6, 6, 6};
 
-#define swordbeam_temp_x (*(uint16*)(g_ram+0x1580E))
-#define swordbeam_temp_y (*(uint16*)(g_ram+0x15810))
-#define swordbeam_arr ((uint8*)(g_ram+0x15800))
-#define swordbeam_var1 (*(uint8*)(g_ram+0x15804))
-#define swordbeam_var2 (*(uint8*)(g_ram+0x15808))
+#define swordbeam_temp_x (*(uint16*)(g_ram_access(0x1580E)))
+#define swordbeam_temp_y (*(uint16*)(g_ram_access(0x15810)))
+#define swordbeam_arr ((uint8*)(g_ram_access(0x15800)))
+#define swordbeam_var1 (*(uint8*)(g_ram_access(0x15804)))
+#define swordbeam_var2 (*(uint8*)(g_ram_access(0x15808)))
 static const int8 kAncilla_TileColl_Attrs[256] = {
   0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0,
   1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 2, 0, 3, 3, 3,
@@ -74,20 +74,20 @@ static const uint8 kMagicPowder_Tab0[40] = {
   3,  4,  5, 6, 16, 17, 18, 0, 1, 2,  3,  4,  5, 6, 7, 8,
   9,  0,  1, 2,  3,  4,  5, 6,
 };
-#define ether_arr1 ((uint8*)(g_ram+0x15800))
-#define ether_var2 (*(uint8*)(g_ram+0x15808))
-#define ether_y2 (*(uint16*)(g_ram+0x1580A))
-#define ether_y_adjusted (*(uint16*)(g_ram+0x1580C))
-#define ether_x2 (*(uint16*)(g_ram+0x1580E))
-#define ether_y3 (*(uint16*)(g_ram+0x15810))
-#define ether_var1 (*(uint8*)(g_ram+0x15812))
-#define ether_y (*(uint16*)(g_ram+0x15813))
-#define ether_x (*(uint16*)(g_ram+0x15815))
+#define ether_arr1 ((uint8*)(g_ram_access(0x15800)))
+#define ether_var2 (*(uint8*)(g_ram_access(0x15808)))
+#define ether_y2 (*(uint16*)(g_ram_access(0x1580A)))
+#define ether_y_adjusted (*(uint16*)(g_ram_access(0x1580C)))
+#define ether_x2 (*(uint16*)(g_ram_access(0x1580E)))
+#define ether_y3 (*(uint16*)(g_ram_access(0x15810)))
+#define ether_var1 (*(uint8*)(g_ram_access(0x15812)))
+#define ether_y (*(uint16*)(g_ram_access(0x15813)))
+#define ether_x (*(uint16*)(g_ram_access(0x15815)))
 static const uint8 kEther_BlitzOrb_Char[8] = {0x48, 0x48, 0x4a, 0x4a, 0x4c, 0x4c, 0x4e, 0x4e};
 static const uint8 kEther_BlitzOrb_Flags[8] = {0x3c, 0x7c, 0x3c, 0x7c, 0x3c, 0x7c, 0x3c, 0x7c};
 static const uint8 kEther_BlitzSegment_Char[4] = {0x40, 0x42, 0x44, 0x46};
-#define bombos_arr1 ((uint8*)(g_ram+0x15800))
-#define bombos_arr2 ((uint8*)(g_ram+0x15810))
+#define bombos_arr1 ((uint8*)(g_ram_access(0x15800)))
+#define bombos_arr2 ((uint8*)(g_ram_access(0x15810)))
 static const uint8 kBombosBlasts_Tab[72] = {
   0xb6, 0x5d, 0xa1, 0x30, 0x69, 0xb5, 0xa3, 0x24, 0x96, 0xac, 0x73, 0x5f, 0x92, 0x48, 0x52, 0x81,
   0x39, 0x95, 0x7f, 0x20, 0x88, 0x5d, 0x34, 0x98, 0xbc, 0xd2, 0x51, 0x77, 0xa2, 0x47, 0x94, 0xb2,
@@ -5619,7 +5619,8 @@ void Ancilla_AllocateOamFromRegion_B_or_E(uint8 size) {  // 88f90a
 }
 
 OamEnt *Ancilla_AllocateOamFromCustomRegion(OamEnt *oam) {  // 88f9ba
-  int a = (uint8 *)oam - g_ram;
+  // original line: int a = (uint8 *)oam - g_ram;
+  int a = (uint8 *)oam - g_ram_access(0);
   if (sort_sprites_setting) {
     if (a < 0x900) {
       if (a < 0x8e0)
@@ -5641,7 +5642,8 @@ OamEnt *Ancilla_AllocateOamFromCustomRegion(OamEnt *oam) {  // 88f9ba
 }
 
 OamEnt *HitStars_UpdateOamBufferPosition(OamEnt *oam) {  // 88fa00
-  int a = (uint8 *)oam - g_ram;
+  // original line: int a = (uint8 *)oam - g_ram;
+  int a = (uint8 *)oam - g_ram_access(0);
   if (!sort_sprites_setting && a >= 0x9d0) {
     oam_cur_ptr = 0x820;
     oam_ext_cur_ptr = 0xa20 + (0x20 >> 2);
@@ -6975,7 +6977,7 @@ uint8 Ancilla_CalculateSfxPan(int k) {  // 8dbb5e
 int Ancilla_AllocInit(uint8 type, uint8 limit) {  // 8ff577
   // snes bug: R14 is used in tile detection already
   // unless this is here it the memcmp will fail when entering/leaving a water through steps quickly
-  if (g_ram[kRam_BugsFixed] >= kBugFix_PolyRenderer)
+  if (*(g_ram_access(kRam_BugsFixed)) >= kBugFix_PolyRenderer)
     BYTE(R14) = limit + 1;
 
   int n = 0;

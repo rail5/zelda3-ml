@@ -17,8 +17,8 @@
 
 static const uint16 kPolyhedralPalette[8] = { 0, 0x14d, 0x1b0, 0x1f3, 0x256, 0x279, 0x2fd, 0x35f };
 
-#define ending_which_dung (*(uint16*)(g_ram+0xcc))
-#define kPolyThreadRam (g_ram + 0x1f00)
+#define ending_which_dung (*(uint16*)(g_ram_access(0xcc)))
+#define kPolyThreadRam (g_ram_access(0x1f00))
 static const int8 kIntroSprite0_Xvel[3] = { 1, 0, -1 };
 static const int8 kIntroSprite0_Yvel[3] = { -1, 1, -1 };
 static const uint8 kIntroSprite3_X[4] = { 0xc2, 0x98, 0x6f, 0x34 };
@@ -116,12 +116,12 @@ static PlayerHandlerFunc *const kEndSequence_Funcs[39] = {
 &Credits_FadeInTheEnd,
 &Credits_HangForever,
 };
-#define intro_sword_ypos WORD(g_ram[0xc8])
-#define intro_sword_18 g_ram[0xca]
-#define intro_sword_19 g_ram[0xcb]
-#define intro_sword_20 g_ram[0xcc]
-#define intro_sword_21 g_ram[0xcd]
-#define intro_sword_24 g_ram[0xd0]
+#define intro_sword_ypos WORD(*(g_ram_access(0xc8)))
+#define intro_sword_18 *(g_ram_access(0xca))
+#define intro_sword_19 *(g_ram_access(0xcb))
+#define intro_sword_20 *(g_ram_access(0xcc))
+#define intro_sword_21 *(g_ram_access(0xcd))
+#define intro_sword_24 *(g_ram_access(0xd0))
 static const uint16 kEnding_Tab1[16] = {
   0x1000, 2, 0x1002, 0x1012, 0x1004, 0x1006, 0x1010, 0x1014, 0x100a,
   0x1016, 0x5d, 0x64, 0x100e, 0x1008, 0x1018, 0x180 };
@@ -500,7 +500,7 @@ void Polyhedral_InitializeThread() {  // 89f7de
   static const uint8 kPolyThreadInit[13] = { 9, 0, 0x1f, 0, 0, 0, 0, 0, 0, 0x30, 0x1d, 0xf8, 9 };
   memset(kPolyThreadRam, 0, 256);
   thread_other_stack = 0x1f31;
-  memcpy(&g_ram[0x1f32], kPolyThreadInit, 13);
+  memcpy(g_ram_access(0x1f32), kPolyThreadInit, 13);
 }
 
 void Module00_Intro() {  // 8cc120
@@ -557,7 +557,7 @@ void Intro_Init_Continue() {  // 8cc170
 
 void Intro_Clear1kbBlocksOfWRAM() {  // 8cc1a0
   uint16 i = R16;
-  uint8 *dst = (uint8 *)&g_ram[0x2000];
+  uint8 *dst = (uint8 *)g_ram_access(0x2000);
   do {
     for (int j = 0; j < 15; j++)
       WORD(dst[i + j * 0x2000]) = 0;
@@ -654,88 +654,7 @@ void FadeMusicAndResetSRAMMirror() {  // 8cc2f0
   music_control = 0xf1;
   SetBackdropcolorBlack();
 
-  // Reset state
-  link_y_coord = 0;
-  link_x_coord = 0;
-  link_z_coord = 0;
-  link_direction_last = 0;
-  link_actual_vel_y = 0;
-  link_actual_vel_x = 0;
-  link_actual_vel_z = 0;
-  link_subpixel_y = 0;
-  link_subpixel_x = 0;
-  link_subpixel_z = 0;
-  link_counter_var1 = 0;
-  link_animation_steps = 0;
-  link_direction_facing = 0;
-  link_y_vel = 0;
-  link_x_vel = 0;
-  link_y_coord_original = 0;
-  byte_7E0034 = 0;
-  byte_7E0035 = 0;
-  tiledetect_diagonal_tile = 0;
-  button_mask_b_y = 0;
-  bitfield_for_a_button = 0;
-  button_b_frames = 0;
-  link_delay_timer_spin_attack = 0;
-  link_y_coord_safe_return_lo = 0;
-  link_x_coord_safe_return_lo = 0;
-  link_y_coord_safe_return_hi = 0;
-  link_x_coord_safe_return_hi = 0;
-  link_direction_mask_a = 0;
-  link_direction_mask_b = 0;
-  player_oam_y_offset = 0;
-  player_oam_x_offset = 0;
-  link_incapacitated_timer = 0;
-  set_when_damaging_enemies = 0;
-  bitmask_of_dragstate = 0;
-  force_move_any_direction = 0;
-  link_visibility_status = 0;
-  cape_decrement_counter = 0;
-  link_auxiliary_state = 0;
-  byte_7E004E = 0;
-  index_of_dashing_sfx = 0;
-  link_cant_change_direction = 0;
-  *tiledetect_which_y_pos = 0;
-  link_cape_mode = 0;
-  link_is_bunny = 0;
-  link_speed_modifier = 0;
-  tiledetect_stair_tile = 0;
-  tiledetect_pit_tile = 0;
-  link_this_controls_sprite_oam = 0;
-  player_near_pit_state = 0;
-  byte_7E005C = 0;
-  link_player_handler_state = 0;
-  link_speed_setting = 0;
-  tiledetect_var2 = 0;
-  gravestone_push_timeout = 0;
-  tiledetect_var1 = 0;
-  oam_priority_value = 0;
-  link_last_direction_moved_towards = 0;
-  link_direction = 0;
-  link_y_page_movement_delta = 0;
-  link_x_page_movement_delta = 0;
-  link_num_orthogonal_directions = 0;
-  link_moving_against_diag_tile = 0;
-  is_standing_in_doorway = 0;
-  moving_against_diag_deadlocked = 0;
-  tiledetect_diag_state = 0;
-  byte_7E0071 = 0;
-  scratch_b = 0;
-  scratch_a = 0;
-  scratch_c = 0;
-  scratch_d = 0;
-  index_of_interacting_tile = 0;
-  allow_scroll_z = 0;
-  link_spin_attack_step_counter = 0;
-  last_light_vs_dark_world = 0;
-  word_7E007E = 0;
-  map16_load_src_off = 0;
-  map16_load_dst_off = 0;
-  map16_load_var2 = 0;
-  overworld_screen_index = 0;
-  overlay_index = 0;
-
+  memset(&link_y_coord, 0, 0x70);
   memset(save_dung_info, 0, 256 * 5);
 
   main_module_index = 1;
@@ -1062,7 +981,7 @@ void AnimateSceneSprite_Sparkle(int k) {  // 8cc90d
 void AnimateSceneSprite_AddObjectsToOamBuffer(int k, const IntroSpriteEnt *src, int num) {  // 8cc972
   uint16 x = intro_x_hi[k] << 8 | intro_x_lo[k];
   uint16 y = intro_y_hi[k] << 8 | intro_y_lo[k];
-  OamEnt *oam = (OamEnt *)&g_ram[intro_sprite_alloc];
+  OamEnt *oam = (OamEnt *)g_ram_access(intro_sprite_alloc);
   intro_sprite_alloc += num * 4;
   do {
     SetOamHelper0(oam, x + src->x, y + src->y, src->charnum, src->flags, src->ext);
@@ -1288,7 +1207,7 @@ void Intro_SetupSwordAndIntroFlash() {  // 8cfe45
 
 void Intro_PeriodicSwordAndIntroFlash() {  // 8cfe56
   if (intro_sword_18)
-    intro_sword_18--;
+    intro_sword_18 = intro_sword_18 - 1;
   SetBackdropcolorBlack();
   if (intro_times_pal_flash) {
     if ((intro_times_pal_flash & 3) != 0) {
@@ -2621,7 +2540,7 @@ void Credits_AddNextAttribution() {  // 8ebe24
 
     if ((ending_which_dung & 1) || R18 * 2 == kEnding_Digits_ScrollY[ending_which_dung >> 1]) {
       int t = kEnding_Credits_DigitChar[ending_which_dung & 1];
-      WORD(g_ram[0xce]) = t;
+      WORD(*(g_ram_access(0xce))) = t;
 
       dst[0] = swap16(R16 + 0x19);
       dst[1] = 0x500;

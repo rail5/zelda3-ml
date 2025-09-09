@@ -474,8 +474,8 @@ static HandlerFuncK *const kSprite_ExecuteSingle[12] = {
   &SpriteModule_Stunned,
 };
 // it's not my job to tell you what to think, my job is to think about what you tell me'
-#define R0 WORD(g_ram[0])
-#define R2 WORD(g_ram[2])
+#define R0 WORD(*(g_ram_access(0)))
+#define R2 WORD(*(g_ram_access(2)))
 static const uint8 kSpawnSecretItems[22] = {
   0xd9, 0x3e, 0x79, 0xd9, 0xdc, 0xd8, 0xda, 0xe4, 0xe1, 0xdc, 0xd8, 0xdf, 0xe0, 0xb, 0x42, 0xd3,
   0x41, 0xd4, 0xd9, 0xe3, 0xd8, 0,
@@ -561,7 +561,7 @@ int Sprite_SpawnSimpleSparkleGarnishEx(int k, uint16 x, uint16 y, int limit) {
     garnish_sprite[j] = k;
     garnish_floor[j] = sprite_floor[k];
   }
-  g_ram[15] = j;
+  *(g_ram_access(15)) = j;
   return j;
 }
 
@@ -2813,7 +2813,7 @@ void Sprite_ApplyRecoilToLink(int k, uint8 vel) {  // 86f688
   ProjectSpeedRet pt = Sprite_ProjectSpeedTowardsLink(k, vel);
   link_actual_vel_x = pt.x;
   link_actual_vel_y = pt.y;
-  g_ram[0xc7] = link_actual_vel_z = vel >> 1;
+  *(g_ram_access(0xc7)) = link_actual_vel_z = vel >> 1;
   link_z_coord = 0;
 }
 
@@ -3125,7 +3125,7 @@ void SpriteDraw_FallingHumanoid(int k) {  // 86fe5b
 
 void Sprite_CorrectOamEntries(int k, int n, uint8 islarge) {  // 86febc
   OamEnt *oam = GetOamCurPtr();
-  uint8 *extp = &g_ram[oam_ext_cur_ptr];
+  uint8 *extp = g_ram_access(oam_ext_cur_ptr);
   uint16 spr_x = Sprite_GetX(k);
   uint16 spr_y = Sprite_GetY(k);
   uint8 scrollx = spr_x - BG2HOFS_copy2;
@@ -3949,12 +3949,12 @@ void Sprite_KillSelf(int k) {  // 89f1f8
     return;
   sprite_state[k] = 0;
   uint16 blk = sprite_N_word[k];
-  g_ram[0] = blk;  // Sprite_PrepOamCoordOrDoubleRet reads this!
-  WORD(g_ram[1]) = (blk >> 3) + 0xef80; // Sprite_PrepOamCoordOrDoubleRet reads this!
+  *(g_ram_access(0)) = blk;  // Sprite_PrepOamCoordOrDoubleRet reads this!
+  WORD(*(g_ram_access(1))) = (blk >> 3) + 0xef80; // Sprite_PrepOamCoordOrDoubleRet reads this!
   uint8 loadedmask = (0x80 >> (blk & 7));
   uint16 addr = 0xEF80 + (blk >> 3);  // warning: blk may be bad, seen with cannon balls in 2nd dungeon
 
-  uint8 *loadedp = &g_ram[addr + 0x10000];
+  uint8 *loadedp = g_ram_access(addr + 0x10000);
 
   if (blk < 0xffff)
     *loadedp &= ~loadedmask;

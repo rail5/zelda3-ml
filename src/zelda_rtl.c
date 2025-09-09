@@ -1,5 +1,6 @@
 #include "zelda_rtl.h"
 #include "variables.h"
+#include "ext/GameRAM.h"
 #include "misc.h"
 #include "nmi.h"
 #include "poly.h"
@@ -12,7 +13,6 @@
 #include "audio.h"
 #include "assets.h"
 ZeldaEnv g_zenv;
-uint8 g_ram[131072];
 
 uint32 g_wanted_zelda_features;
 
@@ -89,11 +89,11 @@ static const uint8 *SimpleHdma_GetPtr(uint32 p) {
   case 0xade07: return (uint8*)kMapMode_Zooms1 + 0xe0;
   case 0xadee7: return (uint8*)kMapMode_Zooms2;
   case 0xadfc7: return (uint8*)kMapMode_Zooms2 + 0xe0;
-  case 0x600: return &g_ram[0x600];
-  case 0x602: return &g_ram[0x602];
-  case 0x604: return &g_ram[0x604];
-  case 0x606: return &g_ram[0x606];
-  case 0xe2: return &g_ram[0xe2];
+  case 0x600: return g_ram_access(0x600);
+  case 0x602: return g_ram_access(0x602);
+  case 0x604: return g_ram_access(0x604);
+  case 0x606: return g_ram_access(0x606);
+  case 0xe2: return g_ram_access(0xe2);
   default:
     assert(0);
     return NULL;
@@ -320,13 +320,13 @@ static void EmuSynchronizeWholeState() {
 // emulator.
 static void EmuSyncMemoryRegion(void *ptr, size_t n) {
   uint8 *data = (uint8 *)ptr;
-  assert(data >= g_ram && data < g_ram + 0x20000);
+  assert(data >= g_ram && data < g_ram_access(0x20000));
   if (g_emu_memory_ptr)
     memcpy(g_emu_memory_ptr + (data - g_ram), data, n);
 }
 
 static void Startup_InitializeMemory() {  // 8087c0
-  memset(g_ram + 0x0, 0, 0x2000);
+  memset(g_ram_access(0x0), 0, 0x2000);
   main_palette_buffer[0] = 0;
   srm_var1 = 0;
   uint8 *sram = g_zenv.sram;
@@ -613,8 +613,8 @@ uint16 StateRecorder_ReadNextReplayState(StateRecorder *sr) {
         addr |= sr->log.data[replay_pos++] << 8;
         addr |= sr->log.data[replay_pos++];
         do {
-          g_ram[addr & 0x1ffff] = sr->log.data[replay_pos++];
-          EmuSyncMemoryRegion(&g_ram[addr & 0x1ffff], 1);
+          *(g_ram_access(addr & 0x1ffff)) = sr->log.data[replay_pos++];
+          EmuSyncMemoryRegion(g_ram_access(addr & 0x1ffff), 1);
         } while (addr++, --nb);
       } else {
         assert(0);
@@ -703,19 +703,19 @@ bool ZeldaRunFrame(int inputs) {
 
     // This is whether APUI00 is true or false, this is used by the ancilla code.
     uint8 apui00 = ZeldaIsMusicPlaying();
-    if (apui00 != g_ram[kRam_APUI00]) {
-      g_ram[kRam_APUI00] = apui00;
-      EmuSyncMemoryRegion(&g_ram[kRam_APUI00], 1);
+    if (apui00 != *(g_ram_access(kRam_APUI00))) {
+      *(g_ram_access(kRam_APUI00)) = apui00;
+      EmuSyncMemoryRegion(g_ram_access(kRam_APUI00), 1);
       StateRecorder_RecordPatchByte(&state_recorder, 0x648, &apui00, 1);
     }
 
     if (animated_tile_data_src != 0) {
       // Whenever we're no longer replaying, we'll remember what bugs were fixed,
       // but only if game is initialized.
-      if (g_ram[kRam_BugsFixed] < kBugFix_Latest) {
-        g_ram[kRam_BugsFixed] = kBugFix_Latest;
-        EmuSyncMemoryRegion(&g_ram[kRam_BugsFixed], 1);
-        StateRecorder_RecordPatchByte(&state_recorder, kRam_BugsFixed, &g_ram[kRam_BugsFixed], 1);
+      if (*(g_ram_access(kRam_BugsFixed)) < kBugFix_Latest) {
+        *(g_ram_access(kRam_BugsFixed)) = kBugFix_Latest;
+        EmuSyncMemoryRegion(g_ram_access(kRam_BugsFixed), 1);
+        StateRecorder_RecordPatchByte(&state_recorder, kRam_BugsFixed, g_ram_access(kRam_BugsFixed), 1);
       }
 
       if (enhanced_features0 != g_wanted_zelda_features) {
@@ -727,7 +727,7 @@ bool ZeldaRunFrame(int inputs) {
   }
 
   int run_what;
-  if (g_ram[kRam_BugsFixed] < kBugFix_PolyRenderer) {
+  if (*(g_ram_access(kRam_BugsFixed)) < kBugFix_PolyRenderer) {
     // A previous version of this code alternated the game loop with
     // the poly renderer.
     run_what = (is_nmi_thread_active && thread_other_stack != 0x1f31) ? 2 : 1;
@@ -735,8 +735,8 @@ bool ZeldaRunFrame(int inputs) {
     // The snes seems to let poly rendering run for a little
     // while each fram until it eventually completes a frame.
     // Simulate this by rendering the poly every n:th frame.
-    run_what = (is_nmi_thread_active && IncrementCrystalCountdown(&g_ram[kRam_CrystalRotateCounter], virq_trigger)) ? 3 : 1;
-    EmuSyncMemoryRegion(&g_ram[kRam_CrystalRotateCounter], 1);
+    run_what = (is_nmi_thread_active && IncrementCrystalCountdown(g_ram_access(kRam_CrystalRotateCounter), virq_trigger)) ? 3 : 1;
+    EmuSyncMemoryRegion(g_ram_access(kRam_CrystalRotateCounter), 1);
   }
 
   if (g_emu_runframe == NULL || enhanced_features0 != 0 || g_zenv.dialogue_flags) {
@@ -837,8 +837,8 @@ void StateRecoderMultiPatch_Patch(StateRecoderMultiPatch *mp, uint32 addr, uint8
     mp->count = 0;
   }
   mp->vals[mp->count++] = value;
-  g_ram[addr] = value;
-  EmuSyncMemoryRegion(&g_ram[addr], 1);
+  *(g_ram_access(addr)) = value;
+  EmuSyncMemoryRegion(g_ram_access(addr), 1);
 }
 
 void PatchCommand(char c) {
@@ -862,7 +862,7 @@ void PatchCommand(char c) {
   } else if (c == 'l') {
     StateRecorder_StopReplay(&state_recorder);
   } else if (c == 'E') {
-    StateRecoderMultiPatch_Patch(&mp, 0x37f, g_ram[0x37f] ^ 1);
+    StateRecoderMultiPatch_Patch(&mp, 0x37f, *(g_ram_access(0x37f)) ^ 1);
   }
   StateRecoderMultiPatch_Commit(&mp);
 }

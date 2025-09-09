@@ -7,10 +7,10 @@
 #include "messaging.h"
 #include "sprite.h"
 
-#define selectfile_R16 g_ram[0xc8]
-#define selectfile_R17 g_ram[0xc9]
-#define selectfile_R18 WORD(g_ram[0xca])
-#define selectfile_R20 WORD(g_ram[0xcc])
+#define selectfile_R16 *(g_ram_access(0xc8))
+#define selectfile_R17 *(g_ram_access(0xc9))
+#define selectfile_R18 WORD(*(g_ram_access(0xca)))
+#define selectfile_R20 WORD(*(g_ram_access(0xcc)))
 static const uint8 kSelectFile_Draw_Y[3] = {0x43, 0x63, 0x83};
 bool Intro_CheckCksum(const uint8 *s) {
   const uint16 *src = (const uint16 *)s;
@@ -23,7 +23,7 @@ bool Intro_CheckCksum(const uint8 *s) {
 
 uint16 *SelectFile_Func1() {
   static const uint16 kSelectFile_Func1_Tab[4] = {0x3581, 0x3582, 0x3591, 0x3592};
-  uint16 *dst = (uint16 *)&g_ram[0x1002];
+  uint16 *dst = (uint16 *)g_ram_access(0x1002);
   *dst++ = 0x10;
   *dst++ = 0xff07;
   for (int i = 0; i < 1024; i++)
@@ -163,16 +163,16 @@ void Intro_FixCksum(uint8 *s) {
 }
 
 void LoadFileSelectGraphics() {  // 80e4e9
-  Decomp_spr(&g_ram[0x14000], 0x5e);
-  Do3To4High(&g_zenv.vram[0x5000], &g_ram[0x14000]);
+  Decomp_spr(g_ram_access(0x14000), 0x5e);
+  Do3To4High(&g_zenv.vram[0x5000], g_ram_access(0x14000));
 
-  Decomp_spr(&g_ram[0x14000], 0x5f);
-  Do3To4High(&g_zenv.vram[0x5400], &g_ram[0x14000]);
+  Decomp_spr(g_ram_access(0x14000), 0x5f);
+  Do3To4High(&g_zenv.vram[0x5400], g_ram_access(0x14000));
 
   TransferFontToVRAM();
 
-  Decomp_spr(&g_ram[0x14000], 0x6b);
-  memcpy(&g_zenv.vram[0x7800], &g_ram[0x14000], 0x300 * sizeof(uint16));
+  Decomp_spr(g_ram_access(0x14000), 0x6b);
+  memcpy(&g_zenv.vram[0x7800], g_ram_access(0x14000), 0x300 * sizeof(uint16));
 }
 
 void Intro_ValidateSram() {  // 828054
@@ -188,7 +188,7 @@ void Intro_ValidateSram() {  // 828054
       }
     }
   }
-  memset(&g_ram[0xd00], 0, 256 * 3);
+  memset(g_ram_access(0xd00), 0, 256 * 3);
 }
 
 void Module01_FileSelect() {  // 8ccd7d
@@ -348,7 +348,7 @@ void FileSelect_Main() {  // 8ccebd
       } else {
         music_control = 0xf1;
         srm_var1 = selectfile_R16 * 2 + 2;
-        WORD(g_ram[0]) = selectfile_R16 * 0x500;
+        WORD(*(g_ram_access(0))) = selectfile_R16 * 0x500;
         CopySaveToWRAM();
       }
     } else if (selectfile_arr1[0] | selectfile_arr1[1] | selectfile_arr1[2]) {

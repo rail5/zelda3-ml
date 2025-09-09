@@ -124,8 +124,8 @@ static const int8 kDungeon_QueryIfTileLiftable_x[4] = { 7, 7, -3, 16 };
 static const int8 kDungeon_QueryIfTileLiftable_y[4] = { 3, 24, 14, 14 };
 static const uint16 kDungeon_QueryIfTileLiftable_rv[16] = { 0x5252, 0x5050, 0x5454, 0x0, 0x2323 };
 static const uint16 kDoor_BlastWallUp_Dsts[] = { 0xd8a, 0xdaa, 0xdca, 0x2b6, 0xab6, 0x12b6 };
-#define adjacent_doors_flags (*(uint16*)(g_ram+0x1100))
-#define adjacent_doors ((uint16*)(g_ram+0x1110))
+#define adjacent_doors_flags (*(uint16*)(g_ram_access(0x1100)))
+#define adjacent_doors ((uint16*)(g_ram_access(0x1110)))
 static const DungPalInfo kDungPalinfos[41] = {
   { 0,  0,  3,  1},
   { 2,  0,  3,  1},
@@ -432,7 +432,7 @@ const uint8 kDungAnimatedTiles[24] = {
   0x5d, 0x5e, 0x5d, 0x5d, 0x5d, 0x5d, 0x5d, 0x5d,
 };
 uint16 *DstoPtr(uint16 d) {
-  return (uint16 *)&(g_ram[dung_line_ptrs_row0 + d * 2]);
+  return (uint16 *)&(*(g_ram_access(dung_line_ptrs_row0 + d * 2)));
 }
 
 void Object_Fill_Nx1(int n, const uint16 *src, uint16 *dst) {
@@ -2300,12 +2300,12 @@ void Sprite_HandlePushedBlocks_One(int i) {
   x -= BG2HOFS_copy2;
 
   if (pushedblocks_some_index < 3) {
-    uint8 *oam = &g_ram[oam_cur_ptr];
+    uint8 *oam = g_ram_access(oam_cur_ptr);
     oam[0] = x;
     oam[1] = y;
     oam[2] = 12;
     oam[3] = 0x20;
-    g_ram[oam_ext_cur_ptr] = 2;
+    *(g_ram_access(oam_ext_cur_ptr)) = 2;
   }
 }
 
@@ -2395,7 +2395,7 @@ void Dungeon_PrepareNextRoomQuadrantUpload() {  // 80913f
   uint16 *src = &dung_bg2[kUploadBgSrcs[ofs] / 2];
   int p = 0;
   do {
-    UploadVram_32x32 *d = (UploadVram_32x32 *)&g_ram[0x1000 + p * 2];
+    UploadVram_32x32 *d = (UploadVram_32x32 *)g_ram_access(0x1000 + p * 2);
     do {
       d->row[0].col[0] = src[XY(0, 0)];
       d->row[0].col[1] = src[XY(1, 0)];
@@ -2429,7 +2429,7 @@ void TileMapPrep_NotWaterOnTag() {  // 8091d3
   uint16 *src = &dung_bg1[kUploadBgSrcs[ofs] / 2];
   int p = 0;
   do {
-    UploadVram_32x32 *d = (UploadVram_32x32 *)&g_ram[0x1000 + p * 2];
+    UploadVram_32x32 *d = (UploadVram_32x32 *)g_ram_access(0x1000 + p * 2);
     do {
       d->row[0].col[0] = src[XY(0, 0)];
       d->row[0].col[1] = src[XY(1, 0)];
@@ -4288,9 +4288,9 @@ void Dungeon_HandleRoomTags() {  // 81c2fd
     if (enhanced_features0 & kFeatures0_MiscBugFixes && submodule_index != 0)
       return;
 
-    g_ram[14] = 0;
+    *(g_ram_access(14)) = 0;
     kDungTagroutines[dung_hdr_tag[0]](0);
-    g_ram[14] = 1;
+    *(g_ram_access(14)) = 1;
     kDungTagroutines[dung_hdr_tag[1]](1);
   }
   flag_skip_call_tag_routines = 0;
@@ -5402,7 +5402,7 @@ void Dungeon_ClearAwayExplodingWall() {  // 81d6c1
     return;
 
   word_7E045E = 0;
-  g_ram[12] = 0;
+  *(g_ram_access(12)) = 0;
   door_animation_step_indicator = 0;
   dung_cur_door_idx = dung_unk_blast_walls_3;
   int dsto = (dung_door_tilemap_address[dung_unk_blast_walls_3 >> 1] -= 2) >> 1;
@@ -6777,7 +6777,7 @@ void Dungeon_ResetTorchBackgroundAndPlayerInner() {  // 828b0c
     link_auxiliary_state = 0;
     link_incapacitated_timer = 0;
     link_actual_vel_z = 0xff;
-    g_ram[0xc7] = 0xff;
+    *(g_ram_access(0xc7)) = 0xff;
     link_delay_timer_spin_attack = 0;
     link_speed_setting = 0;
     swimcoll_var5[0] &= ~0xff;

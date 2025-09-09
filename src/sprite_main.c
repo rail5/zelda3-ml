@@ -9,7 +9,7 @@
 #include "player.h"
 #include "misc.h"
 
-#define byte_7FFE01 (*(uint8*)(g_ram+0x1FE01))
+#define byte_7FFE01 (*(uint8*)(g_ram_access(0x1FE01)))
 static const int8 kSpriteKeese_Tab2[16] = {0, 8, 11, 14, 16, 14, 11, 8, 0, -8, -11, -14, -16, -14, -11, -8};
 static const int8 kSpriteKeese_Tab3[16] = {-16, -14, -11, -8, 0, 8, 11, 14, 16, 14, 11, 8, 0, -9, -11, -14};
 static const int8 kZazak_Yvel[4] = {0, 0, 16, -16};
@@ -18,10 +18,10 @@ static const int8 kDesertBarrier_Xv[4] = {16, -16, 0, 0};
 static const int8 kDesertBarrier_Yv[4] = {0, 0, 16, -16};
 static const uint8 kCrystalSwitchPal[2] = {2, 4};
 static const uint8 kZazak_Dir2[8] = {2, 3, 2, 3, 0, 1, 0, 1};
-#define moldorm_x_lo ((uint8*)(g_ram+0x1FC00))
-#define moldorm_x_hi ((uint8*)(g_ram+0x1FC80))
-#define moldorm_y_lo ((uint8*)(g_ram+0x1FD00))
-#define moldorm_y_hi ((uint8*)(g_ram+0x1FD80))
+#define moldorm_x_lo ((uint8*)(g_ram_access(0x1FC00)))
+#define moldorm_x_hi ((uint8*)(g_ram_access(0x1FC80)))
+#define moldorm_y_lo ((uint8*)(g_ram_access(0x1FD00)))
+#define moldorm_y_hi ((uint8*)(g_ram_access(0x1FD80)))
 static const int8 kBadPullDownSwitch_X[5] = {-4, 12, 0, -4, 4};
 static const int8 kBadPullDownSwitch_Y[5] = {-3, -3, 0, 5, 5};
 static const uint8 kBadPullDownSwitch_Char[5] = {0xd2, 0xd2, 0xc4, 0xe4, 0xe4};
@@ -30,10 +30,10 @@ static const uint8 kBadPullDownSwitch_Big[5] = {0, 0, 2, 2, 2};
 static const uint8 kBadPullSwitch_Tab5[6] = {0, 1, 2, 3, 4, 5};
 static const uint8 kBadPullSwitch_Tab4[12] = {0, 0, 1, 1, 2, 2, 3, 3, 4, 5, 5, 5};
 static const uint8 kThief_Gfx[12] = {11, 8, 2, 5, 9, 6, 0, 3, 10, 7, 1, 4};
-#define word_7FFE00 (*(uint16*)(g_ram+0x1FE00))
-#define word_7FFE02 (*(uint16*)(g_ram+0x1FE02))
-#define word_7FFE04 (*(uint16*)(g_ram+0x1FE04))
-#define word_7FFE06 (*(uint16*)(g_ram+0x1FE06))
+#define word_7FFE00 (*(uint16*)(g_ram_access(0x1FE00)))
+#define word_7FFE02 (*(uint16*)(g_ram_access(0x1FE02)))
+#define word_7FFE04 (*(uint16*)(g_ram_access(0x1FE04)))
+#define word_7FFE06 (*(uint16*)(g_ram_access(0x1FE06)))
 static const int16 kTutorialSoldier_X[20] = {
   4, 0, -6, -6, 2, 0, 0, -7, -7, -7, 0, 0, 0xf, 0xf, 0xf, 6,
   0xe, -4, 4, 0,
@@ -395,8 +395,8 @@ static const uint8 kFluteBoyAnimal_OamFlags[2] = {0x40, 0};
 static const uint8 kFluteBoyAnimal_Gfx[3] = {0, 1, 2};
 static const uint8 kGibo_OamFlags[4] = {0, 0x40, 0xc0, 0x80};
 static const uint8 kGibo_OamFlags2[2] = {11, 7};
-#define chainchomp_x_hist ((uint16*)(g_ram+0x1FC00))
-#define chainchomp_y_hist ((uint16*)(g_ram+0x1FD00))
+#define chainchomp_x_hist ((uint16*)(g_ram_access(0x1FC00)))
+#define chainchomp_y_hist ((uint16*)(g_ram_access(0x1FD00)))
 static const uint8 kBlindHead_Draw_Char[16] = {0x86, 0x86, 0x84, 0x82, 0x80, 0x82, 0x84, 0x86, 0x86, 0x86, 0x88, 0x8a, 0x8c, 0x8a, 0x88, 0x86};
 static const uint8 kBlindHead_Draw_Flags[16] = {0, 0, 0, 0, 0, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0, 0, 0, 0};
 static const uint8 kGanon_G_Func2[16] = { 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1 };
@@ -10558,7 +10558,7 @@ void PushSwitch_Draw(int k) {  // 86bb22
   oam[3].flags |= flags;
   oam[4].flags |= flags;
 
-  uint8 *big = &g_ram[oam_ext_cur_ptr];
+  uint8 *big = g_ram_access(oam_ext_cur_ptr);
   big[0] = big[1] = big[2] = big[3] = 0;
   big[4] = 2;
 
@@ -16441,7 +16441,7 @@ void SpriteDraw_TrinexxRockHeadAndBody(int k) {  // 9db587
     SetOamPlain(oam + 1, x, y + 16, 0x2a, f, 2);
   }
 
-  oam = (OamEnt *)&g_ram[0x800] + 91;
+  oam = (OamEnt *)g_ram_access(0x800) + 91;
   int g = overlord_x_lo[2];
   for (int i = 0; i < 5; i++, oam++) {
     int j = g * 5 + i;
