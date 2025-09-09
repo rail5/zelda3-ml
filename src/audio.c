@@ -440,7 +440,7 @@ uint8_t zelda_read_apui00() {
   // from the apu and we don't want to make the core code
   // dependent on the apu timings, so relocated this value
   // to 0x648.
-  return g_ram[kRam_APUI00];
+  return *(g_ram_access(kRam_APUI00));
 }
 
 uint8_t zelda_apu_read(uint32_t adr) {

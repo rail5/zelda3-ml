@@ -822,7 +822,7 @@ void Death_Func15(bool count_as_death) {  // 89f50f
     } else {
       uint8 slot = srm_var1;
       int offs = kSrmOffsets[(slot >> 1) - 1];
-      WORD(g_ram[0]) = offs;
+      WORD(*(g_ram_access(0))) = offs;
       death_var5 = 0;
       CopySaveToWRAM();
     }
@@ -1641,8 +1641,8 @@ void Module0E_03_01_03_DrawRooms() {  // 8ae384
   DungeonMap_DrawBorderForRooms(0x300, ~0x1000);
   DungeonMap_DrawDungeonLayout(0x300);
   dungmap_cur_floor++;
-  WORD(g_ram[6]) = 0;
-  WORD(g_ram[10]) = 0;
+  WORD(*(g_ram_access(6))) = 0;
+  WORD(*(g_ram_access(10))) = 0;
   nmi_subroutine_index = 8;
   BYTE(nmi_load_target_addr) = 0x22;
   dungmap_init_state++;
@@ -1857,7 +1857,7 @@ void DungeonMap_HandleFloorSelect() {  // 8ae986
   if (r2 + r3 < 3 || dungmap_var2 || !(joypad1H_last & 0xc))
     return;
   dungmap_cur_floor &= 0xff;
-  uint16 r6 = WORD(g_ram[6]);
+  uint16 r6 = WORD(*(g_ram_access(6)));
   if (joypad1H_last & 8) {
     if (r2 - 1 == dungmap_cur_floor)
       return;
@@ -1873,19 +1873,19 @@ void DungeonMap_HandleFloorSelect() {  // 8ae986
   DungeonMap_DrawBorderForRooms(r6, ~0x1000);
   DungeonMap_DrawDungeonLayout(r6);
   dungmap_var2++;
-  WORD(g_ram[10]) = joypad1H_last;
+  WORD(*(g_ram_access(10))) = joypad1H_last;
   int x = joypad1H_last >> 3 & 1;
   dungmap_var4 = BG2VOFS_copy2 + kDungMap_Tab26[x];
   if (!x) {
     r6 = (r6 - 0x300) & 0xfff;
     dungmap_cur_floor++;
   }
-  WORD(g_ram[6]) = r6;
+  WORD(*(g_ram_access(6))) = r6;
   nmi_subroutine_index = 8;
 }
 
 void DungeonMap_ScrollFloors() {  // 8aea7f
-  int x = WORD(g_ram[10]) >> 3 & 1;
+  int x = WORD(*(g_ram_access(10))) >> 3 & 1;
   dungmap_var5 += kDungMap_Tab39[x];
   dungmap_var8 += kDungMap_Tab39[x];
   BG2VOFS_copy2 += kDungMap_Tab40[x];
@@ -2093,7 +2093,7 @@ void CopySaveToWRAM() {  // 8ccfbb
   bird_travel_y_lo[k] = 0;
   birdtravel_var1[k] = 0;
 
-  memcpy(save_dung_info, &g_zenv.sram[WORD(g_ram[0])], 0x500);
+  memcpy(save_dung_info, &g_zenv.sram[WORD(*(g_ram_access(0)))], 0x500);
 
   bg_tile_animation_countdown = 7;
   word_7EC013 = 7;
@@ -2646,7 +2646,7 @@ void RenderText_DrawSelectedYItem() {  // 8ece14
   int item = choice_in_multiselect_box;
   const uint16 *p = Hud_GetItemBoxPtr(item);
   p += ((item == 3 || item == 32) ? 1 : (&link_item_bow)[item]) * 4;
-  uint8 *vwf300 = &g_ram[0x1300];
+  uint8 *vwf300 = g_ram_access(0x1300);
   memcpy(vwf300 + 0xc2, p, 4);
   memcpy(vwf300 + 0xec, p + 2, 4);
 }
@@ -2763,7 +2763,7 @@ uint16 *RenderText_DrawBorderRow(uint16 *d, int y) {  // 8ed2ab
 }
 
 void Text_BuildCharacterTilemap() {  // 8ed2ec
-  uint16 *vwf300 = (uint16 *)&g_ram[0x1300];
+  uint16 *vwf300 = (uint16 *)g_ram_access(0x1300);
   for (int i = 0; i < 126; i++)
     vwf300[i] = text_tilemap_cur++;
   RenderText_Refresh();
@@ -2773,7 +2773,7 @@ void RenderText_Refresh() {  // 8ed307
   RenderText_DrawBorderInitialize();
   text_msgbox_topleft_copy += 0x21;
   uint16 *d = vram_upload_data;
-  uint16 *s = (uint16 *)&g_ram[0x1300];
+  uint16 *s = (uint16 *)g_ram_access(0x1300);
   for (int j = 0; j != 6; j++) {
     *d++ = swap16(text_msgbox_topleft_copy);
     text_msgbox_topleft_copy += 0x20;

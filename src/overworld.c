@@ -78,12 +78,12 @@ static PlayerHandlerFunc *const kOverworld_EntranceSequence[5] = {
   &Overworld_AnimateEntrance_GanonsTower,
 };
 #ifndef map16_decode_0
-#define map16_decode_0 ((uint8*)(g_ram+0x14400))
-#define map16_decode_1 ((uint8*)(g_ram+0x14410))
-#define map16_decode_2 ((uint8*)(g_ram+0x14420))
-#define map16_decode_3 ((uint8*)(g_ram+0x14430))
-#define map16_decode_last (*(uint16*)(g_ram+0x14440))
-#define map16_decode_tmp (*(uint16*)(g_ram+0x14442))
+#define map16_decode_0 ((uint8*)(g_ram_access(0x14400)))
+#define map16_decode_1 ((uint8*)(g_ram_access(0x14410)))
+#define map16_decode_2 ((uint8*)(g_ram_access(0x14420)))
+#define map16_decode_3 ((uint8*)(g_ram_access(0x14430)))
+#define map16_decode_last (*(uint16*)(g_ram_access(0x14440)))
+#define map16_decode_tmp (*(uint16*)(g_ram_access(0x14442)))
 #endif
 static const uint16 kSecondaryOverlayPerOw[128] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1354,7 +1354,7 @@ void MirrorWarp_LoadSpritesAndColors() {  // 82b334
     map16_load_var2 = (0x390 - 0x400 & 0xf80) >> 7;
     map16_load_dst_off = (0x390 - 0x10 & 0x3e) >> 1;
   }
-  Map16ToMap8(&g_ram[0x2000], 0);
+  Map16ToMap8(g_ram_access(0x2000), 0);
   map16_load_var2 = bak3;
   map16_load_dst_off = bak2;
   map16_load_src_off = bak1;
@@ -2040,7 +2040,7 @@ void Overworld_LoadAmbientOverlay(bool load_map_data) {  // 82ed25
   if (load_map_data)
     Overworld_DrawQuadrantsAndOverlays();
 
-  Map16ToMap8(&g_ram[0x2000], 0);
+  Map16ToMap8(g_ram_access(0x2000), 0);
   map16_load_var2 = bak3;
   map16_load_dst_off = bak2;
   map16_load_src_off = bak1;
@@ -2442,10 +2442,10 @@ uint16 *BufferAndBuildMap16Stripes_Y(uint16 *dst) {  // 82f482
 
 void Overworld_DecompressAndDrawAllQuadrants() {  // 82f54a
   int si = overworld_screen_index;
-  Overworld_DecompressAndDrawOneQuadrant((uint16 *)&g_ram[0x2000], si + 0);
-  Overworld_DecompressAndDrawOneQuadrant((uint16 *)&g_ram[0x2040], si + 1);
-  Overworld_DecompressAndDrawOneQuadrant((uint16 *)&g_ram[0x3000], si + 8);
-  Overworld_DecompressAndDrawOneQuadrant((uint16 *)&g_ram[0x3040], si + 9);
+  Overworld_DecompressAndDrawOneQuadrant((uint16 *)g_ram_access(0x2000), si + 0);
+  Overworld_DecompressAndDrawOneQuadrant((uint16 *)g_ram_access(0x2040), si + 1);
+  Overworld_DecompressAndDrawOneQuadrant((uint16 *)g_ram_access(0x3000), si + 8);
+  Overworld_DecompressAndDrawOneQuadrant((uint16 *)g_ram_access(0x3040), si + 9);
 }
 
 static const uint8 *GetOverworldHibytes(int i) {
@@ -2458,17 +2458,17 @@ static const uint8 *GetOverworldLobytes(int i) {
 
 
 void Overworld_DecompressAndDrawOneQuadrant(uint16 *dst, int screen) {  // 82f595
-  Decompress_bank02(&g_ram[0x14400], GetOverworldHibytes(screen));
+  Decompress_bank02(g_ram_access(0x14400), GetOverworldHibytes(screen));
   for (int i = 0; i < 256; i++)
-    g_ram[0x14001 + i * 2] = g_ram[0x14400 + i];
+    *(g_ram_access(0x14001 + i * 2)) = *(g_ram_access(0x14400 + i));
 
-  Decompress_bank02(&g_ram[0x14400], GetOverworldLobytes(screen));
+  Decompress_bank02(g_ram_access(0x14400), GetOverworldLobytes(screen));
   for (int i = 0; i < 256; i++)
-    g_ram[0x14000 + i * 2] = g_ram[0x14400 + i];
+    *(g_ram_access(0x14000 + i * 2)) = *(g_ram_access(0x14400 + i));
 
   map16_decode_last = 0xffff;
 
-  uint16 *src = (uint16 *)&g_ram[0x14000];
+  uint16 *src = (uint16 *)g_ram_access(0x14000);
   for (int j = 0; j < 16; j++) {
     for (int i = 0; i < 16; i++) {
       Overworld_ParseMap32Definition(dst, *src++ * 2);
@@ -2531,12 +2531,12 @@ void Overworld_ParseMap32Definition(uint16 *dst, uint16 input) {  // 82f691
 
 void OverworldLoad_LoadSubOverlayMap32() {  // 82f7cb
   int si = overworld_screen_index;
-  Overworld_DecompressAndDrawOneQuadrant((uint16 *)&g_ram[0x4000], si);
+  Overworld_DecompressAndDrawOneQuadrant((uint16 *)g_ram_access(0x4000), si);
 }
 
 void LoadOverworldOverlay() {  // 82fd0d
   OverworldLoad_LoadSubOverlayMap32();
-  Map16ToMap8(&g_ram[0x4000], 0x1000);
+  Map16ToMap8(g_ram_access(0x4000), 0x1000);
   nmi_subroutine_index = nmi_disable_core_updates = 4;
   submodule_index++;
 }
@@ -2559,7 +2559,7 @@ void OverworldCopyMap16ToBuffer(const uint8 *src, uint16 r20, int r14, uint16 *r
 
   int yr = map16_load_src_off - 0x410 & 0x1fff;
   int xr = map16_load_dst_off;
-  uint16 *tmp = (uint16 *)(g_ram + 0x500);
+  uint16 *tmp = (uint16 *)(g_ram_access(0x500));
   int n = 32;
   do {
     WORD(tmp[xr]) = WORD(src[yr]);
@@ -2593,7 +2593,7 @@ void MirrorBonk_RecoverChangedTiles() {  // 82fe47
 }
 
 void DecompressEnemyDamageSubclasses() {  // 82fe71
-  uint8 *tmp = &g_ram[0x14000];
+  uint8 *tmp = g_ram_access(0x14000);
   memcpy(tmp, kEnemyDamageData, kEnemyDamageData_SIZE);
   for (int i = 0; i < 0x1000; i += 2) {
     uint8 t = *tmp++;
@@ -3434,12 +3434,12 @@ uint8 SmashRockPile_fromLift(uint16 a, uint16 pos, uint16 y, Point16U pt) {  // 
   big_rock_starting_address = pos;
   door_open_closed_counter = 40;
 
-  *(uint16 *)&g_ram[0] = pt.y;
-  *(uint16 *)&g_ram[2] = pt.x;
+  *(uint16 *)g_ram_access(0) = pt.y;
+  *(uint16 *)g_ram_access(2) = pt.x;
 
   uint16 secret = Overworld_RevealSecret(pos);
-  pt.y = *(uint16 *)&g_ram[0];
-  pt.x = *(uint16 *)&g_ram[2];
+  pt.y = *(uint16 *)g_ram_access(0);
+  pt.x = *(uint16 *)g_ram_access(2);
 
   if (secret == 0xffff) {
     save_ow_event_info[overworld_screen_index] |= 0x20;

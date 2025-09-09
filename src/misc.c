@@ -720,11 +720,11 @@ void AncillaAdd_ItemReceipt(uint8 ain, uint8 yin, int chest_pos) {  // 8985e8
 
   int j = link_receiveitem_index;
   if (j == 0) {
-    g_ram[kMemoryLocationToGiveItemTo[4]] = kValueToGiveItemTo[0];
+    *(g_ram_access(kMemoryLocationToGiveItemTo[4])) = kValueToGiveItemTo[0];
   }
 
   uint8 v = kValueToGiveItemTo[j];
-  uint8 *p = &g_ram[kMemoryLocationToGiveItemTo[j]];
+  uint8 *p = g_ram_access(kMemoryLocationToGiveItemTo[j]);
   if (!sign8(v))
     *p = v;
 

@@ -17,8 +17,8 @@
 
 static const uint16 kPolyhedralPalette[8] = { 0, 0x14d, 0x1b0, 0x1f3, 0x256, 0x279, 0x2fd, 0x35f };
 
-#define ending_which_dung (*(uint16*)(g_ram+0xcc))
-#define kPolyThreadRam (g_ram + 0x1f00)
+#define ending_which_dung (*(uint16*)(g_ram_access(0xcc)))
+#define kPolyThreadRam (g_ram_access(0x1f00))
 static const int8 kIntroSprite0_Xvel[3] = { 1, 0, -1 };
 static const int8 kIntroSprite0_Yvel[3] = { -1, 1, -1 };
 static const uint8 kIntroSprite3_X[4] = { 0xc2, 0x98, 0x6f, 0x34 };
@@ -116,12 +116,12 @@ static PlayerHandlerFunc *const kEndSequence_Funcs[39] = {
 &Credits_FadeInTheEnd,
 &Credits_HangForever,
 };
-#define intro_sword_ypos WORD(g_ram[0xc8])
-#define intro_sword_18 g_ram[0xca]
-#define intro_sword_19 g_ram[0xcb]
-#define intro_sword_20 g_ram[0xcc]
-#define intro_sword_21 g_ram[0xcd]
-#define intro_sword_24 g_ram[0xd0]
+#define intro_sword_ypos WORD(*(g_ram_access(0xc8)))
+#define intro_sword_18 *(g_ram_access(0xca))
+#define intro_sword_19 *(g_ram_access(0xcb))
+#define intro_sword_20 *(g_ram_access(0xcc))
+#define intro_sword_21 *(g_ram_access(0xcd))
+#define intro_sword_24 *(g_ram_access(0xd0))
 static const uint16 kEnding_Tab1[16] = {
   0x1000, 2, 0x1002, 0x1012, 0x1004, 0x1006, 0x1010, 0x1014, 0x100a,
   0x1016, 0x5d, 0x64, 0x100e, 0x1008, 0x1018, 0x180 };
@@ -500,7 +500,7 @@ void Polyhedral_InitializeThread() {  // 89f7de
   static const uint8 kPolyThreadInit[13] = { 9, 0, 0x1f, 0, 0, 0, 0, 0, 0, 0x30, 0x1d, 0xf8, 9 };
   memset(kPolyThreadRam, 0, 256);
   thread_other_stack = 0x1f31;
-  memcpy(&g_ram[0x1f32], kPolyThreadInit, 13);
+  memcpy(g_ram_access(0x1f32), kPolyThreadInit, 13);
 }
 
 void Module00_Intro() {  // 8cc120
@@ -557,7 +557,7 @@ void Intro_Init_Continue() {  // 8cc170
 
 void Intro_Clear1kbBlocksOfWRAM() {  // 8cc1a0
   uint16 i = R16;
-  uint8 *dst = (uint8 *)&g_ram[0x2000];
+  uint8 *dst = (uint8 *)g_ram_access(0x2000);
   do {
     for (int j = 0; j < 15; j++)
       WORD(dst[i + j * 0x2000]) = 0;
@@ -981,7 +981,7 @@ void AnimateSceneSprite_Sparkle(int k) {  // 8cc90d
 void AnimateSceneSprite_AddObjectsToOamBuffer(int k, const IntroSpriteEnt *src, int num) {  // 8cc972
   uint16 x = intro_x_hi[k] << 8 | intro_x_lo[k];
   uint16 y = intro_y_hi[k] << 8 | intro_y_lo[k];
-  OamEnt *oam = (OamEnt *)&g_ram[intro_sprite_alloc];
+  OamEnt *oam = (OamEnt *)g_ram_access(intro_sprite_alloc);
   intro_sprite_alloc += num * 4;
   do {
     SetOamHelper0(oam, x + src->x, y + src->y, src->charnum, src->flags, src->ext);
@@ -1207,7 +1207,7 @@ void Intro_SetupSwordAndIntroFlash() {  // 8cfe45
 
 void Intro_PeriodicSwordAndIntroFlash() {  // 8cfe56
   if (intro_sword_18)
-    intro_sword_18--;
+    intro_sword_18 = intro_sword_18 - 1;
   SetBackdropcolorBlack();
   if (intro_times_pal_flash) {
     if ((intro_times_pal_flash & 3) != 0) {
@@ -2540,7 +2540,7 @@ void Credits_AddNextAttribution() {  // 8ebe24
 
     if ((ending_which_dung & 1) || R18 * 2 == kEnding_Digits_ScrollY[ending_which_dung >> 1]) {
       int t = kEnding_Credits_DigitChar[ending_which_dung & 1];
-      WORD(g_ram[0xce]) = t;
+      WORD(*(g_ram_access(0xce))) = t;
 
       dst[0] = swap16(R16 + 0x19);
       dst[1] = 0x500;

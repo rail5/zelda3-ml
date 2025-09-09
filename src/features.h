@@ -48,14 +48,14 @@ enum {
   kFeatures0_DimFlashes = 65536,
 };
 
-#define enhanced_features0 (*(uint32*)(g_ram+0x64c))
-#define msu_curr_sample (*(uint32*)(g_ram+0x650))
-#define msu_volume (*(uint8*)(g_ram+0x654))
-#define msu_track (*(uint8*)(g_ram+0x655))
-#define hud_inventory_order ((uint8*)(g_ram + 0x225)) // 4x6 bytes
-#define hud_cur_item_x (*(uint8*)(g_ram+0x656))
-#define hud_cur_item_l (*(uint8*)(g_ram+0x657))
-#define hud_cur_item_r (*(uint8*)(g_ram+0x658))
+#define enhanced_features0 (*(uint32*)(g_ram_access(0x64c)))
+#define msu_curr_sample (*(uint32*)(g_ram_access(0x650)))
+#define msu_volume (*(uint8*)(g_ram_access(0x654)))
+#define msu_track (*(uint8*)(g_ram_access(0x655)))
+#define hud_inventory_order ((uint8*)(g_ram_access(0x225))) // 4x6 bytes
+#define hud_cur_item_x (*(uint8*)(g_ram_access(0x656)))
+#define hud_cur_item_l (*(uint8*)(g_ram_access(0x657)))
+#define hud_cur_item_r (*(uint8*)(g_ram_access(0x658)))
 
 
 

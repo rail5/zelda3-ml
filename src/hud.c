@@ -484,7 +484,7 @@ void Hud_Module_Run() {  // 8ddd36
 }
 
 void Hud_ClearTileMap() {  // 8ddd5a
-  uint16 *target = (uint16 *)&g_ram[0x1000];
+  uint16 *target = (uint16 *)g_ram_access(0x1000);
   for (int i = 0; i < 1024; i++)
     target[i] = 0x207f;
   sound_effect_2 = 17;
@@ -665,7 +665,7 @@ void Hud_NormalMenu() {  // 8ddf15
 
   nmi_subroutine_index = 1;
   BYTE(nmi_load_target_addr) = 0x22;
-  //g_ram[0x15d0] = 0;
+  //*(g_ram_access(0x15d0)) = 0;
 }
 
 void Hud_UpdateHud() {  // 8ddfa9

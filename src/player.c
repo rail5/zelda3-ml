@@ -3808,7 +3808,7 @@ void Link_PerformOpenChest() {  // 87b574
   uint8 alt = kReceiveItemAlternates[item];
   if (alt != 0xff) {
     uint16 ram_addr = kMemoryLocationToGiveItemTo[item];
-    if (g_ram[ram_addr])
+    if (*(g_ram_access(ram_addr)))
       item = alt;
   }
 
