@@ -104,50 +104,81 @@ extern "C" void ImGui_ShowToolbar() {
 			ImGui::Dummy(ImVec2(500, 0)); // Forces minimum width
 			ImGui::Text("Controller Mapping Configuration\n");
 			ImGui::Separator();
-			
-			// Table header
-			ImGui::Columns(3, "ControllerMappingTable");
-			ImGui::Text("Internal Button"); ImGui::NextColumn();
-			ImGui::Text("Controller Mapping"); ImGui::NextColumn();
-			ImGui::Text("Change"); ImGui::NextColumn();
-			ImGui::Separator();
 
-			// Iterate over internal buttons in order
-			for (const auto& internalPair : internalButtonNames) {
-			    int internalButton = internalPair.first;
+			int numJoysticks = SDL_NumJoysticks();
 
-				if (internalButton == kGamepadBtn_Invalid)
-					continue;
+			if (ImGui::BeginTabBar("ControllersTabBar")) {
+				for (int i = 0; i < numJoysticks; i++) {
+					SDL_Joystick* joystick = SDL_JoystickOpen(i);
+					if (joystick) {
+						std::string controllerName = SDL_JoystickName(joystick);
+						int controllerID = SDL_JoystickInstanceID(joystick);
+						ControllerType controllerType = SDL_IsGameController(i) ? CT_GameController : CT_Joystick;
+						ControllerKey whichController;
+						whichController.controllerID = controllerID;
+						whichController.type = controllerType;
+						if (controllerName.empty()) {
+							controllerName = "Controller " + std::to_string(i);
+						}
+						if (ImGui::BeginTabItem(controllerName.c_str())) {
+							ImGui::Text("Mapping for: %s", controllerName.c_str());
+							ImGui::Separator();
 
-			    const std::string& internalName = internalPair.second;
+							auto& buttonMapping = controllerButtonMappings[whichController];
+							if (buttonMapping.empty()) {
+								buttonMapping = defaultButtonMapping; // Initialize with default if empty
+							}
 
-			    // Find which SDL button is mapped to this internal button
-			    int mappedSdlButton = -1;
-			    for (const auto& pair : buttonMapping) {
-			        if (pair.second == internalButton) {
-			            mappedSdlButton = pair.first;
-			            break;
-			        }
-			    }
+							// Display mapping table
+							std::string columnLabel = "ControllerMappingTable" + std::to_string(controllerID);
+							ImGui::Columns(3, columnLabel.c_str());
+							ImGui::Text("Internal Button"); ImGui::NextColumn();
+							ImGui::Text("Controller Mapping"); ImGui::NextColumn();
+							ImGui::Text("Change"); ImGui::NextColumn();
+							ImGui::Separator();
 
-			    std::string sdlName = (sdlButtonNames.count(mappedSdlButton)) ? sdlButtonNames.at(mappedSdlButton) : "Unmapped";
+							// Iterate over internal buttons in order
+							for (const auto& internalPair : internalButtonNames) {
+								int internalButton = internalPair.first;
 
-			    ImGui::Text("%s", internalName.c_str());
-			    ImGui::NextColumn();
-			    ImGui::Text("%s", sdlName.c_str());
-			    ImGui::NextColumn();
+								if (internalButton == kGamepadBtn_Invalid)
+									continue;
+								
+								const std::string& internalName = internalPair.second;
 
-			    if (remapping_active && remapping_internal_button == internalButton) {
-			        ImGui::Text("Press a button...");
-			    } else {
-			        if (ImGui::Button(("Change##" + std::to_string(internalButton)).c_str())) {
-			            remapping_active = true;
-			            remapping_internal_button = internalButton;
-			        }
-			    }
-			    ImGui::NextColumn();
+								// Find which SDL button is mapped to this internal button
+								int mappedSdlButton = -1;
+								for (const auto& pair : buttonMapping) {
+									if (pair.second == internalButton) {
+										mappedSdlButton = pair.first;
+										break;
+									}
+								}
+
+								std::string sdlName = (sdlButtonNames.count(mappedSdlButton)) ? sdlButtonNames.at(mappedSdlButton) : "Unmapped";
+
+								ImGui::Text("%s", internalName.c_str());
+								ImGui::NextColumn();
+								ImGui::Text("%s", sdlName.c_str());
+								ImGui::NextColumn();
+
+								if (remapping_active && remapping_internal_button == internalButton) {
+									ImGui::Text("Press a button...");
+								} else {
+									if (ImGui::Button(("Change##" + std::to_string(internalButton)).c_str())) {
+										remapping_active = true;
+										remapping_internal_button = internalButton;
+									}
+								}
+								ImGui::NextColumn();
+							}
+							ImGui::Columns(1);
+							ImGui::EndTabItem();
+						}
+					}
+				}
+				ImGui::EndTabBar();
 			}
-			ImGui::Columns(1);
 
 			if (ImGui::Button("Save Configuration")) {
 				saveButtonConfig();

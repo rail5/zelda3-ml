@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <unordered_map>
 #include "RemapSdlButton.h"
 
 /**
@@ -12,34 +13,22 @@
  * This map can be modified at runtime if needed
  */
 
-std::unordered_map<int, int> buttonMapping = {
-	{SDL_CONTROLLER_BUTTON_A, kGamepadBtn_A},
-	{SDL_CONTROLLER_BUTTON_B, kGamepadBtn_B},
-	{SDL_CONTROLLER_BUTTON_X, kGamepadBtn_X},
-	{SDL_CONTROLLER_BUTTON_Y, kGamepadBtn_Y},
-	{SDL_CONTROLLER_BUTTON_BACK, kGamepadBtn_Back},
-	{SDL_CONTROLLER_BUTTON_GUIDE, kGamepadBtn_Guide},
-	{SDL_CONTROLLER_BUTTON_START, kGamepadBtn_Start},
-	{SDL_CONTROLLER_BUTTON_LEFTSTICK, kGamepadBtn_L3},
-	{SDL_CONTROLLER_BUTTON_RIGHTSTICK, kGamepadBtn_R3},
-	{SDL_CONTROLLER_BUTTON_LEFTSHOULDER, kGamepadBtn_L1},
-	{SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, kGamepadBtn_R1},
-	{SDL_CONTROLLER_BUTTON_DPAD_UP, kGamepadBtn_DpadUp},
-	{SDL_CONTROLLER_BUTTON_DPAD_DOWN, kGamepadBtn_DpadDown},
-	{SDL_CONTROLLER_BUTTON_DPAD_LEFT, kGamepadBtn_DpadLeft},
-	{SDL_CONTROLLER_BUTTON_DPAD_RIGHT, kGamepadBtn_DpadRight}
-};
+std::unordered_map<ControllerKey, std::unordered_map<int, int>> controllerButtonMappings; // Key: controller ID, Value: button map
 
-extern "C" int RemapSdlButton(int button) {
-	auto it = buttonMapping.find(button);
-	if (it != buttonMapping.end()) {
-		return it->second;
+extern "C" int RemapSdlButton(ControllerKey controllerID, int button) {
+	auto ctrlIt = controllerButtonMappings.find(controllerID);
+	if (ctrlIt != controllerButtonMappings.end()) {
+		auto btnIt = ctrlIt->second.find(button);
+		if (btnIt != ctrlIt->second.end()) {
+			return btnIt->second;
+		}
 	}
+
 	return kGamepadBtn_Invalid;
 }
 
-extern "C" void ChangeSdlButtonMapping(int sdlButton, int internalButton) {
-	buttonMapping[sdlButton] = internalButton;
+extern "C" void ChangeSdlButtonMapping(ControllerKey controllerID, int sdlButton, int internalButton) {
+	controllerButtonMappings[controllerID][sdlButton] = internalButton;
 }
 
 /**
@@ -63,8 +52,15 @@ extern "C" void saveButtonConfig() {
 	if (!configFile.is_open()) {
 		throw std::runtime_error("Unable to open config file for writing.");
 	}
-	for (const auto& pair : buttonMapping) {
-		configFile << pair.first << "\t" << pair.second << "\n";
+	for (const auto& ctrlPair : controllerButtonMappings) {
+		ControllerKey controller = ctrlPair.first;
+		int controllerID = controller.controllerID;
+		ControllerType controllerType = controller.type;
+		for (const auto& btnPair : ctrlPair.second) {
+			int sdlButton = btnPair.first;
+			int internalButton = btnPair.second;
+			configFile << controllerType << "\t" << controllerID << "\t" << sdlButton << "\t" << internalButton << "\n";
+		}
 	}
 }
 
@@ -77,8 +73,12 @@ extern "C" void loadButtonConfig() {
 	if (!configFile.is_open()) {
 		return; // Fail open, just use defaults
 	}
-	int sdlButton, internalButton;
-	while (configFile >> sdlButton >> internalButton) {
-		ChangeSdlButtonMapping(sdlButton, internalButton);
+	int controllerTypeInt;
+	int controllerID, sdlButton, internalButton;
+	while (configFile >> controllerTypeInt >> controllerID >> sdlButton >> internalButton) {
+		ControllerKey key;
+		key.type = static_cast<ControllerType>(controllerTypeInt);
+		key.controllerID = controllerID;
+		ChangeSdlButtonMapping(key, sdlButton, internalButton);
 	}
 }

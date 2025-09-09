@@ -415,7 +415,20 @@ int main(int argc, char** argv) {
       // Button re-mapping?
       if (remapping_active && event.type == SDL_CONTROLLERBUTTONDOWN) {
           int sdlButton = event.cbutton.button;
-          ChangeSdlButtonMapping(sdlButton, remapping_internal_button);
+          int controllerID = event.cbutton.which;
+          struct ControllerKey whichController;
+          whichController.controllerID = controllerID;
+          whichController.type = CT_GameController;
+          ChangeSdlButtonMapping(whichController, sdlButton, remapping_internal_button);
+          remapping_active = false;
+          remapping_internal_button = kGamepadBtn_Invalid;
+      } else if (remapping_active && event.type == SDL_JOYBUTTONDOWN) {
+          int sdlButton = event.jbutton.button;
+          int controllerID = event.jbutton.which;
+          struct ControllerKey whichController;
+          whichController.controllerID = controllerID;
+          whichController.type = CT_Joystick;
+          ChangeSdlButtonMapping(whichController, sdlButton, remapping_internal_button);
           remapping_active = false;
           remapping_internal_button = kGamepadBtn_Invalid;
       }
@@ -426,14 +439,30 @@ int main(int argc, char** argv) {
       case SDL_CONTROLLERDEVICEADDED:
         OpenOneGamepad(event.cdevice.which);
         break;
+      case SDL_JOYAXISMOTION:
+        HandleGamepadAxisInput(event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+        break;
       case SDL_CONTROLLERAXISMOTION:
         HandleGamepadAxisInput(event.caxis.which, event.caxis.axis, event.caxis.value);
         break;
       case SDL_CONTROLLERBUTTONDOWN:
       case SDL_CONTROLLERBUTTONUP: {
-        int b = RemapSdlButton(event.cbutton.button);
+        struct ControllerKey whichController;
+        whichController.controllerID = event.cbutton.which;
+        whichController.type = CT_GameController;
+        int b = RemapSdlButton(whichController, event.cbutton.button);
         if (b >= 0)
           HandleGamepadInput(b, event.type == SDL_CONTROLLERBUTTONDOWN);
+        break;
+      }
+      case SDL_JOYBUTTONDOWN:
+      case SDL_JOYBUTTONUP: {
+        struct ControllerKey whichController;
+        whichController.controllerID = event.jbutton.which;
+        whichController.type = CT_Joystick;
+        int b = RemapSdlButton(whichController, event.jbutton.button);
+        if (b >= 0)
+          HandleGamepadInput(b, event.type == SDL_JOYBUTTONDOWN);
         break;
       }
       case SDL_MOUSEWHEEL:

@@ -12,7 +12,56 @@
 #include <unordered_map>
 #include <map>
 #include <string>
-extern std::unordered_map<int, int> buttonMapping;
+
+extern "C" {
+#endif
+
+enum ControllerType {
+	CT_GameController,
+	CT_Joystick
+};
+
+struct ControllerKey {
+	int controllerID;
+	enum ControllerType type;
+
+	#ifdef __cplusplus
+	bool operator==(const ControllerKey &other) const {
+		return controllerID == other.controllerID && type == other.type;
+	}
+	#endif
+};
+
+#ifdef __cplusplus
+}
+namespace std {
+template <>
+struct hash<ControllerKey> {
+	std::size_t operator()(const ControllerKey &k) const {
+		return std::hash<int>()(k.controllerID) ^ (std::hash<int>()(k.type) << 1);
+	}
+};
+}
+
+extern std::unordered_map<ControllerKey, std::unordered_map<int, int>> controllerButtonMappings;
+
+static const std::unordered_map<int, int> defaultButtonMapping = {
+	{SDL_CONTROLLER_BUTTON_A, kGamepadBtn_A},
+	{SDL_CONTROLLER_BUTTON_B, kGamepadBtn_B},
+	{SDL_CONTROLLER_BUTTON_X, kGamepadBtn_X},
+	{SDL_CONTROLLER_BUTTON_Y, kGamepadBtn_Y},
+	{SDL_CONTROLLER_BUTTON_BACK, kGamepadBtn_Back},
+	{SDL_CONTROLLER_BUTTON_GUIDE, kGamepadBtn_Guide},
+	{SDL_CONTROLLER_BUTTON_START, kGamepadBtn_Start},
+	{SDL_CONTROLLER_BUTTON_LEFTSTICK, kGamepadBtn_L3},
+	{SDL_CONTROLLER_BUTTON_RIGHTSTICK, kGamepadBtn_R3},
+	{SDL_CONTROLLER_BUTTON_LEFTSHOULDER, kGamepadBtn_L1},
+	{SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, kGamepadBtn_R1},
+	{SDL_CONTROLLER_BUTTON_DPAD_UP, kGamepadBtn_DpadUp},
+	{SDL_CONTROLLER_BUTTON_DPAD_DOWN, kGamepadBtn_DpadDown},
+	{SDL_CONTROLLER_BUTTON_DPAD_LEFT, kGamepadBtn_DpadLeft},
+	{SDL_CONTROLLER_BUTTON_DPAD_RIGHT, kGamepadBtn_DpadRight}
+};
 
 static const std::map<int, std::string> sdlButtonNames = {
 	{SDL_CONTROLLER_BUTTON_A, "A"},
@@ -56,8 +105,8 @@ static const std::map<int, std::string> internalButtonNames = {
 extern "C" {
 #endif
 
-int RemapSdlButton(int button);
-void ChangeSdlButtonMapping(int sdlButton, int internalButton);
+int RemapSdlButton(struct ControllerKey controllerID, int button);
+void ChangeSdlButtonMapping(struct ControllerKey controllerID, int sdlButton, int internalButton);
 
 void saveButtonConfig();
 void loadButtonConfig();
