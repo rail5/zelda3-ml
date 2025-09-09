@@ -31,6 +31,8 @@
 #include "ext/ImGui_bridge.h"
 #include "ext/GameRAM.h"
 
+#include "fullscreen.h"
+
 static bool g_run_without_emu = 0;
 
 // Forwards
@@ -665,6 +667,10 @@ void ZeldaApuLock() {
 
 void ZeldaApuUnlock() {
   SDL_UnlockMutex(g_audio_mutex);
+}
+
+void Fullscreen_Toggle() {
+  HandleCommand(kKeys_Fullscreen, true);
 }
 
 

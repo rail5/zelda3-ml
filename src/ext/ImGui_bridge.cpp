@@ -13,6 +13,7 @@
 #include "RemapSdlButton.h"
 
 #include "../zelda_rtl.h"
+#include "../fullscreen.h"
 
 static ImGuiContext* g_ImGuiContext = nullptr;
 SDL_GLContext gl_context = nullptr;
@@ -68,12 +69,12 @@ extern "C" void ImGui_ShowToolbar() {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Exit", "Alt+F4")) {
-				// Handle Exit action
+				exit(0);
 			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Edit")) {
-			if (ImGui::MenuItem("Controller Mapping", "Ctrl+M")) {
+			if (ImGui::MenuItem("Controller Mapping", "")) {
 				// Bring up controller mapping dialog
 				show_controller_mapping_dialog = true;
 			}
@@ -107,13 +108,13 @@ extern "C" void ImGui_ShowToolbar() {
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View")) {
-			if (ImGui::MenuItem("Toggle Fullscreen", "F11")) {
-				// Handle Toggle Fullscreen action
+			if (ImGui::MenuItem("Toggle Fullscreen", "Alt+Enter")) {
+				Fullscreen_Toggle();
 			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Help")) {
-			if (ImGui::MenuItem("About", "F1")) {
+			if (ImGui::MenuItem("About", "")) {
 				// Show about dialog
 				show_about_dialog = true;
 			}
