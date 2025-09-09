@@ -22,6 +22,12 @@ extern "C" int RemapSdlButton(ControllerKey controllerID, int button) {
 		if (btnIt != ctrlIt->second.end()) {
 			return btnIt->second;
 		}
+	} else {
+		// Pull from default mapping if no custom mapping exists for this controller
+		auto defIt = defaultButtonMapping.find(button);
+		if (defIt != defaultButtonMapping.end()) {
+			return defIt->second;
+		}
 	}
 
 	return kGamepadBtn_Invalid;

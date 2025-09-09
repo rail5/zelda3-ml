@@ -395,9 +395,6 @@ int main(int argc, char** argv) {
   for (int i = 0; i < SDL_NumJoysticks(); i++)
     OpenOneGamepad(i);
 
-  // Initialize gamepad config (controller mappings)
-  loadButtonConfig();
-
   bool running = true;
   SDL_Event event;
   uint32 lastTick = SDL_GetTicks();
@@ -407,6 +404,14 @@ int main(int argc, char** argv) {
 
   if (g_config.autosave)
     HandleCommand(kKeys_Load + 0, true);
+
+  // Initialize gamepad config (controller mappings)
+  loadButtonConfig();
+
+  bool is_gamecontroller[SDL_NumJoysticks()];
+  for (int i = 0; i < SDL_NumJoysticks(); i++) {
+    is_gamecontroller[i] = SDL_IsGameController(i);
+  }
 
   while(running) {
     while(SDL_PollEvent(&event)) {
@@ -440,7 +445,8 @@ int main(int argc, char** argv) {
         OpenOneGamepad(event.cdevice.which);
         break;
       case SDL_JOYAXISMOTION:
-        HandleGamepadAxisInput(event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+        if (!is_gamecontroller[event.jaxis.which])
+          HandleGamepadAxisInput(event.jaxis.which, event.jaxis.axis, event.jaxis.value);
         break;
       case SDL_CONTROLLERAXISMOTION:
         HandleGamepadAxisInput(event.caxis.which, event.caxis.axis, event.caxis.value);
@@ -456,7 +462,8 @@ int main(int argc, char** argv) {
         break;
       }
       case SDL_JOYBUTTONDOWN:
-      case SDL_JOYBUTTONUP: {
+      case SDL_JOYBUTTONUP:
+        if (!is_gamecontroller[event.jbutton.which]) {
         struct ControllerKey whichController;
         whichController.controllerID = event.jbutton.which;
         whichController.type = CT_Joystick;
