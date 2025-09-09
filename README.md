@@ -9,6 +9,7 @@ So far, this fork has added:
  - A button remapping GUI using ImGui
  - Support for multiple controllers with independent button mappings
  - Support for SDL_Joystick devices (e.g., off-brand controllers that don't register as SDL_GameController)
+ - GUI Savestate support
  - Some makefile conveniences
 
 Less visible differences:
