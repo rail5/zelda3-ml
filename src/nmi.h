@@ -1,10 +1,22 @@
 #pragma once
 #include "types.h"
 
+typedef struct JoypadInputState {
+	uint8 joypad1h_last;
+	uint8 joypad1l_last;
+	uint8 filtered_joypad_h;
+	uint8 filtered_joypad_l;
+	uint8 joypad1h_last2;
+	uint8 joypad1l_last2;
+} JoypadInputState;
+
+extern JoypadInputState g_joypad_state_by_player[2];
+
 void NMI_UploadSubscreenOverlayFormer();
 void NMI_UploadSubscreenOverlayLatter();
-void Interrupt_NMI(uint16 joypad_input);
-void NMI_ReadJoypads(uint16 joypad_input);
+void Interrupt_NMI(uint16 joypad_input_1, uint16 joypad_input_2);
+void NMI_ReadJoypads(uint16 joypad_input_1, uint16 joypad_input_2);
+void NMI_ApplyJoypadStateForPlayer(int player);
 void NMI_DoUpdates();
 void NMI_UploadTilemap();
 void NMI_UploadTilemap_doNothing();

@@ -135,14 +135,43 @@ static void Interrupt_NMI_AudioParts_Locked() {
 
 }
 
-void Interrupt_NMI(uint16 joypad_input) {  // 8080c9
+JoypadInputState g_joypad_state_by_player[2];
+
+static void DecodeJoypadInput(uint16 joypad_input, JoypadInputState *state) {
+  uint16 both = joypad_input;
+  uint16 reversed = 0;
+  for (int i = 0; i < 16; i++, both >>= 1)
+    reversed = reversed * 2 + (both & 1);
+  uint8 r0 = reversed;
+  uint8 r1 = reversed >> 8;
+
+  state->joypad1l_last = r0;
+  state->filtered_joypad_l = (r0 ^ state->joypad1l_last2) & r0;
+  state->joypad1l_last2 = r0;
+
+  state->joypad1h_last = r1;
+  state->filtered_joypad_h = (r1 ^ state->joypad1h_last2) & r1;
+  state->joypad1h_last2 = r1;
+}
+
+void NMI_ApplyJoypadStateForPlayer(int player) {
+  JoypadInputState *state = &g_joypad_state_by_player[player != 0];
+  joypad1H_last = state->joypad1h_last;
+  joypad1L_last = state->joypad1l_last;
+  filtered_joypad_H = state->filtered_joypad_h;
+  filtered_joypad_L = state->filtered_joypad_l;
+  joypad1H_last2 = state->joypad1h_last2;
+  joypad1L_last2 = state->joypad1l_last2;
+}
+
+void Interrupt_NMI(uint16 joypad_input_1, uint16 joypad_input_2) {  // 8080c9
 
   Interrupt_NMI_AudioParts_Locked();
 
   if (!nmi_boolean) {
     nmi_boolean = true;
     NMI_DoUpdates();
-    NMI_ReadJoypads(joypad_input);
+    NMI_ReadJoypads(joypad_input_1, joypad_input_2);
   }
 
   if (is_nmi_thread_active) {
@@ -152,21 +181,10 @@ void Interrupt_NMI(uint16 joypad_input) {  // 8080c9
   WritePpuRegisters();
 }
 
-void NMI_ReadJoypads(uint16 joypad_input) {  // 8083d1
-  uint16 both = joypad_input;
-  uint16 reversed = 0;
-  for (int i = 0; i < 16; i++, both >>= 1)
-    reversed = reversed * 2 + (both & 1);
-  uint8 r0 = reversed;
-  uint8 r1 = reversed >> 8;
-
-  joypad1L_last = r0;
-  filtered_joypad_L = (r0 ^ joypad1L_last2) & r0;
-  joypad1L_last2 = r0;
-
-  joypad1H_last = r1;
-  filtered_joypad_H = (r1 ^ joypad1H_last2) & r1;
-  joypad1H_last2 = r1;
+void NMI_ReadJoypads(uint16 joypad_input_1, uint16 joypad_input_2) {  // 8083d1
+  DecodeJoypadInput(joypad_input_1, &g_joypad_state_by_player[0]);
+  DecodeJoypadInput(joypad_input_2, &g_joypad_state_by_player[1]);
+  NMI_ApplyJoypadStateForPlayer(0);
 }
 
 void NMI_DoUpdates() {  // 8089e0

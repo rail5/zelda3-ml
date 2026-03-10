@@ -327,7 +327,7 @@ static void EmuSynchronizeWholeState() {
     cpu_reset(g_snes->cpu);
 }
 
-void EmuRunFrameWithCompare(uint16 input_state, int run_what) {
+void EmuRunFrameWithCompare(uint16 input_state_1, uint16 input_state_2, int run_what) {
   MakeSnapshot(&g_snapshot_before);
   MakeMySnapshot(&g_snapshot_mine);
   MakeSnapshot(&g_snapshot_theirs);
@@ -342,13 +342,14 @@ void EmuRunFrameWithCompare(uint16 input_state, int run_what) {
 
   // Run orig version then snapshot
 again_theirs:
-  g_snes->input1->currentState = input_state;
+  g_snes->input1->currentState = input_state_1;
+  g_snes->input2->currentState = input_state_2;
   RunEmulatedSnesFrame(g_snes, run_what);
   MakeSnapshot(&g_snapshot_theirs);
 
   // Run my version and snapshot
 again_mine:
-  ZeldaRunFrameInternal(input_state, run_what);
+  ZeldaRunFrameInternal(input_state_1, input_state_2, run_what);
 
   MakeMySnapshot(&g_snapshot_mine);
 

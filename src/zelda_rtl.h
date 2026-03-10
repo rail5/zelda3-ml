@@ -50,8 +50,8 @@ void HdmaSetup(uint32 addr6, uint32 addr7, uint8 transfer_unit, uint8 reg6, uint
 void ZeldaInitialize();
 void ZeldaReset(bool preserve_sram);
 void ZeldaDrawPpuFrame(uint8 *pixel_buffer, size_t pitch, uint32 render_flags);
-void ZeldaRunFrameInternal(uint16 input, int run_what);
-bool ZeldaRunFrame(int input_state);
+void ZeldaRunFrameInternal(uint16 input1, uint16 input2, int run_what);
+bool ZeldaRunFrame(int input1_state, int input2_state);
 void LoadSongBank(const uint8 *p);
 void ZeldaApuLock();
 void ZeldaApuUnlock();
@@ -81,7 +81,7 @@ void SaveLoadSlot(int cmd, int which);
 void ZeldaWriteSram();
 void ZeldaReadSram();
 
-typedef void ZeldaRunFrameFunc(uint16 input, int run_what);
+typedef void ZeldaRunFrameFunc(uint16 input1, uint16 input2, int run_what);
 typedef void ZeldaSyncAllFunc();
 
 void ZeldaSetupEmuCallbacks(uint8 *emu_ram, ZeldaRunFrameFunc *func, ZeldaSyncAllFunc *sync_all);

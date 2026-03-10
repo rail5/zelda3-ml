@@ -41,12 +41,14 @@ static void LoadLinkGraphics();
 static void RenderNumber(uint8 *dst, size_t pitch, int n, bool big);
 static void HandleInput(int keyCode, int modCode, bool pressed);
 static void HandleCommand(uint32 j, bool pressed);
-static void HandleGamepadInput(int button, bool pressed);
-static void HandleGamepadAxisInput(int gamepad_id, int axis, int value);
+static void HandleCommandForPlayer(int player, uint32 j, bool pressed);
+static void HandleGamepadInput(int player, int button, bool pressed);
+static void HandleGamepadAxisInput(int player, int gamepad_id, int axis, int value);
 static void OpenOneGamepad(int i);
 static void HandleVolumeAdjustment(int volume_adjustment);
 static void LoadAssets();
 static void SwitchDirectory();
+static int GetPlayerForController(int controller_id);
 
 enum {
   kDefaultFullscreen = 0,
@@ -62,16 +64,17 @@ static SDL_Window *g_window;
 
 static uint8 g_paused, g_turbo, g_replay_turbo = true, g_cursor = true;
 static uint8 g_current_window_scale;
-static uint8 g_gamepad_buttons;
-static int g_input1_state;
+static uint8 g_gamepad_buttons[2];
+static int g_input_state[2];
 static bool g_display_perf;
 static int g_curr_fps;
 static int g_ppu_render_flags = 0;
 static int g_snes_width, g_snes_height;
 static int g_sdl_audio_mixer_volume = SDL_MIX_MAXVOLUME;
 static struct RendererFuncs g_renderer_funcs;
-static uint32 g_gamepad_modifiers;
-static uint16 g_gamepad_last_cmd[kGamepadBtn_Count];
+static uint32 g_gamepad_modifiers[2];
+static uint16 g_gamepad_last_cmd[2][kGamepadBtn_Count];
+static int g_controller_player_slots[2] = { -1, -1 };
 
 void NORETURN Die(const char *error) {
 #if defined(NDEBUG) && defined(_WIN32)
@@ -449,10 +452,10 @@ int main(int argc, char** argv) {
         break;
       case SDL_JOYAXISMOTION:
         if (!is_gamecontroller[event.jaxis.which])
-          HandleGamepadAxisInput(event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+          HandleGamepadAxisInput(GetPlayerForController(event.jaxis.which), event.jaxis.which, event.jaxis.axis, event.jaxis.value);
         break;
       case SDL_CONTROLLERAXISMOTION:
-        HandleGamepadAxisInput(event.caxis.which, event.caxis.axis, event.caxis.value);
+        HandleGamepadAxisInput(GetPlayerForController(event.caxis.which), event.caxis.which, event.caxis.axis, event.caxis.value);
         break;
       case SDL_CONTROLLERBUTTONDOWN:
       case SDL_CONTROLLERBUTTONUP: {
@@ -464,6 +467,7 @@ int main(int argc, char** argv) {
         // DEBUG TESTING:
         // L1: Switch player
         // R1: SHOULDER button: init multi
+        int player = GetPlayerForController(event.cbutton.which);
         if (b == kGamepadBtn_L1 && event.type == SDL_CONTROLLERBUTTONDOWN) {
           switch_player();
         } else if (b == kGamepadBtn_R1 && event.type == SDL_CONTROLLERBUTTONDOWN) {
@@ -471,7 +475,7 @@ int main(int argc, char** argv) {
         }
 
         if (b >= 0)
-          HandleGamepadInput(b, event.type == SDL_CONTROLLERBUTTONDOWN);
+          HandleGamepadInput(player, b, event.type == SDL_CONTROLLERBUTTONDOWN);
         break;
       }
       case SDL_JOYBUTTONDOWN:
@@ -481,8 +485,9 @@ int main(int argc, char** argv) {
         whichController.controllerID = event.jbutton.which;
         whichController.type = CT_Joystick;
         int b = ResolveSdlButton(whichController, event.jbutton.button);
+        int player = GetPlayerForController(event.jbutton.which);
         if (b >= 0)
-          HandleGamepadInput(b, event.type == SDL_JOYBUTTONDOWN);
+          HandleGamepadInput(player, b, event.type == SDL_JOYBUTTONDOWN);
         break;
       }
       case SDL_MOUSEWHEEL:
@@ -529,13 +534,17 @@ int main(int argc, char** argv) {
     }
 
     // Clear gamepad inputs when joypad directional inputs to avoid wonkiness
-    int inputs = g_input1_state;
-    if (g_input1_state & 0xf0)
-      g_gamepad_buttons = 0;
-    inputs |= g_gamepad_buttons;
+    int inputs1 = g_input_state[0];
+    int inputs2 = g_input_state[1];
+    if (g_input_state[0] & 0xf0)
+      g_gamepad_buttons[0] = 0;
+    if (g_input_state[1] & 0xf0)
+      g_gamepad_buttons[1] = 0;
+    inputs1 |= g_gamepad_buttons[0];
+    inputs2 |= g_gamepad_buttons[1];
 
     SDL_LockMutex(g_audio_mutex);
-    bool is_replay = ZeldaRunFrame(inputs);
+    bool is_replay = ZeldaRunFrame(inputs1, inputs2);
     SDL_UnlockMutex(g_audio_mutex);
 
     frameCtr++;
@@ -640,12 +649,16 @@ static void RenderNumber(uint8 *dst, size_t pitch, int n, bool big) {
 static void HandleCommand_Locked(uint32 j, bool pressed);
 
 static void HandleCommand(uint32 j, bool pressed) {
+  HandleCommandForPlayer(0, j, pressed);
+}
+
+static void HandleCommandForPlayer(int player, uint32 j, bool pressed) {
   if (j <= kKeys_Controls_Last) {
     static const uint8 kKbdRemap[] = { 0, 4, 5, 6, 7, 2, 3, 8, 0, 9, 1, 10, 11 };
     if (pressed)
-      g_input1_state |= 1 << kKbdRemap[j];
+      g_input_state[player != 0] |= 1 << kKbdRemap[j];
     else
-      g_input1_state &= ~(1 << kKbdRemap[j]);
+      g_input_state[player != 0] &= ~(1 << kKbdRemap[j]);
     return;
   }
 
@@ -744,14 +757,28 @@ static void OpenOneGamepad(int i) {
   }
 }
 
-static void HandleGamepadInput(int button, bool pressed) {
-  if (!!(g_gamepad_modifiers & (1 << button)) == pressed)
+static int GetPlayerForController(int controller_id) {
+  for (int player = 0; player < 2; player++) {
+    if (g_controller_player_slots[player] == controller_id)
+      return player;
+  }
+  for (int player = 0; player < 2; player++) {
+    if (g_controller_player_slots[player] == -1) {
+      g_controller_player_slots[player] = controller_id;
+      return player;
+    }
+  }
+  return 0;
+}
+
+static void HandleGamepadInput(int player, int button, bool pressed) {
+  if (!!(g_gamepad_modifiers[player] & (1 << button)) == pressed)
     return;
-  g_gamepad_modifiers ^= 1 << button;
+  g_gamepad_modifiers[player] ^= 1 << button;
   if (pressed)
-    g_gamepad_last_cmd[button] = FindCmdForGamepadButton(button, g_gamepad_modifiers);
-  if (g_gamepad_last_cmd[button] != 0)
-    HandleCommand(g_gamepad_last_cmd[button], pressed);
+    g_gamepad_last_cmd[player][button] = FindCmdForGamepadButton(button, g_gamepad_modifiers[player]);
+  if (g_gamepad_last_cmd[player][button] != 0)
+    HandleCommandForPlayer(player, g_gamepad_last_cmd[player][button], pressed);
 }
 
 static void HandleVolumeAdjustment(int volume_adjustment) {
@@ -787,19 +814,19 @@ static float ApproximateAtan2(float y, float x) {
   return q + *(float *)&uatan_2q;
 }
 
-static void HandleGamepadAxisInput(int gamepad_id, int axis, int value) {
-  static int last_gamepad_id, last_x, last_y;
+static void HandleGamepadAxisInput(int player, int gamepad_id, int axis, int value) {
+  static int last_gamepad_id[2], last_x[2], last_y[2];
   if (axis == SDL_CONTROLLER_AXIS_LEFTX || axis == SDL_CONTROLLER_AXIS_LEFTY) {
     // ignore other gamepads unless they have a big input
-    if (last_gamepad_id != gamepad_id) {
+    if (last_gamepad_id[player] != gamepad_id) {
       if (value > -16000 && value < 16000)
         return;
-      last_gamepad_id = gamepad_id;
-      last_x = last_y = 0;
+      last_gamepad_id[player] = gamepad_id;
+      last_x[player] = last_y[player] = 0;
     }
-    *(axis == SDL_CONTROLLER_AXIS_LEFTX ? &last_x : &last_y) = value;
+    *(axis == SDL_CONTROLLER_AXIS_LEFTX ? &last_x[player] : &last_y[player]) = value;
     int buttons = 0;
-    if (last_x * last_x + last_y * last_y >= 10000 * 10000) {
+    if (last_x[player] * last_x[player] + last_y[player] * last_y[player] >= 10000 * 10000) {
       // in the non deadzone part, divide the circle into eight 45 degree
       // segments rotated by 22.5 degrees that control which direction to move.
       // todo: do this without floats?
@@ -813,13 +840,13 @@ static void HandleGamepadAxisInput(int gamepad_id, int axis, int value) {
         1 << 6,           // 6 = left
         1 << 6 | 1 << 4,  // 7 = left, up
       };
-      uint8 angle = (uint8)(int)(ApproximateAtan2(last_y, last_x) * 64.0f + 0.5f);
+      uint8 angle = (uint8)(int)(ApproximateAtan2(last_y[player], last_x[player]) * 64.0f + 0.5f);
       buttons = kSegmentToButtons[(uint8)(angle + 16 + 64) >> 5];
     }
-    g_gamepad_buttons = buttons;
+    g_gamepad_buttons[player] = buttons;
   } else if ((axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT || axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)) {
     if (value < 12000 || value >= 16000)  // hysteresis
-      HandleGamepadInput(axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ? kGamepadBtn_L2 : kGamepadBtn_R2, value >= 12000);
+      HandleGamepadInput(player, axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ? kGamepadBtn_L2 : kGamepadBtn_R2, value >= 12000);
   }
 }
 

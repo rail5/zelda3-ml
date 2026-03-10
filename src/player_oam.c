@@ -5,6 +5,8 @@
 #include "player.h"
 #include "misc.h"
 
+#include "ext/GameRAM.h"
+
 static const int8 kPlayerOam_StairsOffsY[] = {
   0, -2, -3, 0, -2, -3, 0, 0, 0, 0, 0, 0, 0, -2, -3, 0,
   -2, -3, 0, 0, 0, 0, 0, 0,
@@ -759,7 +761,7 @@ void CalculateSwordHitBox() {  // 879e63
   player_oam_x_offset = kSwordOamXOffs[i];
 }
 
-void LinkOam_Main() {  // 8da18e
+void LinkOam_Main_impl() {  // 8da18e
   uint16 y_coord_backup = link_y_coord;
 
   if (submodule_index == 18 || submodule_index == 19) {
@@ -1129,6 +1131,13 @@ continue_after_set:
 
   if (submodule_index == 18 || submodule_index == 19)
     link_y_coord = y_coord_backup;
+}
+
+void LinkOam_Main() {
+  switch_player();
+  LinkOam_Main_impl();
+  switch_player();
+  LinkOam_Main_impl();
 }
 
 uint8 FindMostSignificantBit(uint8 v) {  // 8daac3

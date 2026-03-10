@@ -284,7 +284,7 @@ static void ZeldaRunPolyLoop() {
   }
 }
 
-void ZeldaRunFrameInternal(uint16 input, int run_what) {
+void ZeldaRunFrameInternal(uint16 input1, uint16 input2, int run_what) {
   if (animated_tile_data_src == 0)
     ZeldaInitializationCode();
 
@@ -292,7 +292,7 @@ void ZeldaRunFrameInternal(uint16 input, int run_what) {
     ZeldaRunPolyLoop();
   if (run_what & 1)
     ZeldaRunGameLoop();
-  Interrupt_NMI(input);
+  Interrupt_NMI(input1, input2);
 }
 
 
@@ -696,11 +696,13 @@ int InputStateReadFromFile() {
 }
 #endif
 
-bool ZeldaRunFrame(int inputs) {
+bool ZeldaRunFrame(int input1, int input2) {
 
   // Avoid up/down and left/right from being pressed at the same time
-  if ((inputs & 0x30) == 0x30) inputs ^= 0x30;
-  if ((inputs & 0xc0) == 0xc0) inputs ^= 0xc0;
+  if ((input1 & 0x30) == 0x30) input1 ^= 0x30;
+  if ((input1 & 0xc0) == 0xc0) input1 ^= 0xc0;
+  if ((input2 & 0x30) == 0x30) input2 ^= 0x30;
+  if ((input2 & 0xc0) == 0xc0) input2 ^= 0xc0;
 
   frame_ctr_dbg++;
 
@@ -708,10 +710,11 @@ bool ZeldaRunFrame(int inputs) {
 
   // Either copy state or apply state
   if (is_replay) {
-    inputs = StateRecorder_ReadNextReplayState(&state_recorder);
+    input1 = StateRecorder_ReadNextReplayState(&state_recorder);
+    input2 = 0;
   } else {
     //    input_state = InputStateReadFromFile();
-    StateRecorder_Record(&state_recorder, inputs);
+    StateRecorder_Record(&state_recorder, input1);
 
     // This is whether APUI00 is true or false, this is used by the ancilla code.
     uint8 apui00 = ZeldaIsMusicPlaying();
@@ -753,9 +756,9 @@ bool ZeldaRunFrame(int inputs) {
 
   if (g_emu_runframe == NULL || enhanced_features0 != 0 || g_zenv.dialogue_flags) {
     // can't compare against real impl when running with extra features.
-    ZeldaRunFrameInternal(inputs, run_what);
+    ZeldaRunFrameInternal(input1, input2, run_what);
   } else {
-    g_emu_runframe(inputs, run_what);
+    g_emu_runframe(input1, input2, run_what);
   }
 
   ZeldaPushApuState();
