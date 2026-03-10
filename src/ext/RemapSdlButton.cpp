@@ -14,6 +14,7 @@
  */
 
 std::unordered_map<ControllerKey, std::unordered_map<int, int>> controllerButtonMappings; // Key: controller ID, Value: button map
+std::unordered_map<ControllerKey, int> controllerPlayerMappings;
 
 extern "C" int ResolveSdlButton(ControllerKey controllerID, int button) {
 	auto ctrlIt = controllerButtonMappings.find(controllerID);
@@ -37,6 +38,19 @@ extern "C" void ChangeSdlButtonMapping(ControllerKey controllerID, int sdlButton
 	controllerButtonMappings[controllerID][sdlButton] = internalButton;
 }
 
+extern "C" int GetConfiguredPlayerForController(ControllerKey controllerID) {
+	auto playerIt = controllerPlayerMappings.find(controllerID);
+	return (playerIt != controllerPlayerMappings.end()) ? playerIt->second : -1;
+}
+
+extern "C" void SetConfiguredPlayerForController(ControllerKey controllerID, int player) {
+	if (player < 0) {
+		controllerPlayerMappings.erase(controllerID);
+	} else {
+		controllerPlayerMappings[controllerID] = player;
+	}
+}
+
 /**
  * We might like to store these button mappings in a config file so changes to the default mapping can be saved
  */
@@ -58,6 +72,10 @@ extern "C" void saveButtonConfig() {
 	if (!configFile.is_open()) {
 		throw std::runtime_error("Unable to open config file for writing.");
 	}
+	for (const auto& playerPair : controllerPlayerMappings) {
+		const ControllerKey& controller = playerPair.first;
+		configFile << "player\t" << controller.type << "\t" << controller.controllerID << "\t" << playerPair.second << "\n";
+	}
 	for (const auto& ctrlPair : controllerButtonMappings) {
 		ControllerKey controller = ctrlPair.first;
 		int controllerID = controller.controllerID;
@@ -65,7 +83,7 @@ extern "C" void saveButtonConfig() {
 		for (const auto& btnPair : ctrlPair.second) {
 			int sdlButton = btnPair.first;
 			int internalButton = btnPair.second;
-			configFile << controllerType << "\t" << controllerID << "\t" << sdlButton << "\t" << internalButton << "\n";
+			configFile << "button\t" << controllerType << "\t" << controllerID << "\t" << sdlButton << "\t" << internalButton << "\n";
 		}
 	}
 }
@@ -79,12 +97,42 @@ extern "C" void loadButtonConfig() {
 	if (!configFile.is_open()) {
 		return; // Fail open, just use defaults
 	}
-	int controllerTypeInt;
-	int controllerID, sdlButton, internalButton;
-	while (configFile >> controllerTypeInt >> controllerID >> sdlButton >> internalButton) {
-		ControllerKey key;
-		key.type = static_cast<ControllerType>(controllerTypeInt);
-		key.controllerID = controllerID;
-		ChangeSdlButtonMapping(key, sdlButton, internalButton);
+	std::string entryType;
+	while (configFile >> entryType) {
+		if (entryType == "button") {
+			int controllerTypeInt;
+			int controllerID, sdlButton, internalButton;
+			if (!(configFile >> controllerTypeInt >> controllerID >> sdlButton >> internalButton))
+				break;
+			ControllerKey key;
+			key.type = static_cast<ControllerType>(controllerTypeInt);
+			key.controllerID = controllerID;
+			ChangeSdlButtonMapping(key, sdlButton, internalButton);
+		} else if (entryType == "player") {
+			int controllerTypeInt;
+			int controllerID, player;
+			if (!(configFile >> controllerTypeInt >> controllerID >> player))
+				break;
+			ControllerKey key;
+			key.type = static_cast<ControllerType>(controllerTypeInt);
+			key.controllerID = controllerID;
+			SetConfiguredPlayerForController(key, player);
+		} else {
+			int controllerTypeInt;
+			int controllerID, sdlButton, internalButton;
+			try {
+				controllerTypeInt = std::stoi(entryType);
+			} catch (...) {
+				std::string ignored;
+				std::getline(configFile, ignored);
+				continue;
+			}
+			if (!(configFile >> controllerID >> sdlButton >> internalButton))
+				break;
+			ControllerKey key;
+			key.type = static_cast<ControllerType>(controllerTypeInt);
+			key.controllerID = controllerID;
+			ChangeSdlButtonMapping(key, sdlButton, internalButton);
+		}
 	}
 }

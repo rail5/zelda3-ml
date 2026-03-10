@@ -44,6 +44,7 @@ struct hash<ControllerKey> {
 }
 
 extern std::unordered_map<ControllerKey, std::unordered_map<int, int>> controllerButtonMappings;
+extern std::unordered_map<ControllerKey, int> controllerPlayerMappings;
 
 static const std::unordered_map<int, int> defaultButtonMapping = {
 	{SDL_CONTROLLER_BUTTON_A, kGamepadBtn_A},
@@ -107,6 +108,8 @@ extern "C" {
 
 int ResolveSdlButton(struct ControllerKey controllerID, int button);
 void ChangeSdlButtonMapping(struct ControllerKey controllerID, int sdlButton, int internalButton);
+int GetConfiguredPlayerForController(struct ControllerKey controllerID);
+void SetConfiguredPlayerForController(struct ControllerKey controllerID, int player);
 
 void saveButtonConfig();
 void loadButtonConfig();

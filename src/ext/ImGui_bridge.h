@@ -26,6 +26,8 @@ bool ImGui_WantCaptureKeyboard();
 
 extern bool remapping_active;
 extern int remapping_internal_button;
+extern int remapping_controller_id;
+extern int remapping_controller_type;
 
 #ifdef __cplusplus
 }

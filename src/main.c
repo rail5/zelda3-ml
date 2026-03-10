@@ -48,7 +48,7 @@ static void OpenOneGamepad(int i);
 static void HandleVolumeAdjustment(int volume_adjustment);
 static void LoadAssets();
 static void SwitchDirectory();
-static int GetPlayerForController(int controller_id);
+static int GetPlayerForController(int controller_id, enum ControllerType type);
 
 enum {
   kDefaultFullscreen = 0,
@@ -427,21 +427,21 @@ int main(int argc, char** argv) {
       if (remapping_active && event.type == SDL_CONTROLLERBUTTONDOWN) {
           int sdlButton = event.cbutton.button;
           int controllerID = event.cbutton.which;
-          struct ControllerKey whichController;
-          whichController.controllerID = controllerID;
-          whichController.type = CT_GameController;
+          struct ControllerKey whichController = { controllerID, CT_GameController };
+          if (whichController.controllerID == remapping_controller_id && whichController.type == remapping_controller_type) {
           ChangeSdlButtonMapping(whichController, sdlButton, remapping_internal_button);
           remapping_active = false;
           remapping_internal_button = kGamepadBtn_Invalid;
+          }
       } else if (remapping_active && event.type == SDL_JOYBUTTONDOWN) {
           int sdlButton = event.jbutton.button;
           int controllerID = event.jbutton.which;
-          struct ControllerKey whichController;
-          whichController.controllerID = controllerID;
-          whichController.type = CT_Joystick;
+          struct ControllerKey whichController = { controllerID, CT_Joystick };
+          if (whichController.controllerID == remapping_controller_id && whichController.type == remapping_controller_type) {
           ChangeSdlButtonMapping(whichController, sdlButton, remapping_internal_button);
           remapping_active = false;
           remapping_internal_button = kGamepadBtn_Invalid;
+          }
       }
 
       bool want_capture_keyboard = ImGui_WantCaptureKeyboard();
@@ -452,10 +452,10 @@ int main(int argc, char** argv) {
         break;
       case SDL_JOYAXISMOTION:
         if (!is_gamecontroller[event.jaxis.which])
-          HandleGamepadAxisInput(GetPlayerForController(event.jaxis.which), event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+          HandleGamepadAxisInput(GetPlayerForController(event.jaxis.which, CT_Joystick), event.jaxis.which, event.jaxis.axis, event.jaxis.value);
         break;
       case SDL_CONTROLLERAXISMOTION:
-        HandleGamepadAxisInput(GetPlayerForController(event.caxis.which), event.caxis.which, event.caxis.axis, event.caxis.value);
+        HandleGamepadAxisInput(GetPlayerForController(event.caxis.which, CT_GameController), event.caxis.which, event.caxis.axis, event.caxis.value);
         break;
       case SDL_CONTROLLERBUTTONDOWN:
       case SDL_CONTROLLERBUTTONUP: {
@@ -464,7 +464,7 @@ int main(int argc, char** argv) {
         whichController.type = CT_GameController;
         int b = ResolveSdlButton(whichController, event.cbutton.button);
 
-        int player = GetPlayerForController(event.cbutton.which);
+        int player = GetPlayerForController(event.cbutton.which, CT_GameController);
 
         if (b >= 0)
           HandleGamepadInput(player, b, event.type == SDL_CONTROLLERBUTTONDOWN);
@@ -477,7 +477,7 @@ int main(int argc, char** argv) {
         whichController.controllerID = event.jbutton.which;
         whichController.type = CT_Joystick;
         int b = ResolveSdlButton(whichController, event.jbutton.button);
-        int player = GetPlayerForController(event.jbutton.which);
+        int player = GetPlayerForController(event.jbutton.which, CT_Joystick);
         if (b >= 0)
           HandleGamepadInput(player, b, event.type == SDL_JOYBUTTONDOWN);
         break;
@@ -749,7 +749,13 @@ static void OpenOneGamepad(int i) {
   }
 }
 
-static int GetPlayerForController(int controller_id) {
+static int GetPlayerForController(int controller_id, enum ControllerType type) {
+  struct ControllerKey whichController = { controller_id, type };
+  int configuredPlayer = GetConfiguredPlayerForController(whichController);
+  if (configuredPlayer >= 0 && configuredPlayer < 2) {
+    g_controller_player_slots[configuredPlayer] = controller_id;
+    return configuredPlayer;
+  }
   for (int player = 0; player < 2; player++) {
     if (g_controller_player_slots[player] == controller_id)
       return player;

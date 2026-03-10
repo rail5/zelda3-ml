@@ -64,6 +64,8 @@ static bool show_controller_mapping_dialog = false;
 
 bool remapping_active = false;
 int remapping_internal_button = kGamepadBtn_Invalid;
+int remapping_controller_id = -1;
+int remapping_controller_type = CT_GameController;
 
 extern "C" void ImGui_ShowToolbar() {
 	if (ImGui::BeginMainMenuBar()) {
@@ -165,6 +167,12 @@ extern "C" void ImGui_ShowToolbar() {
 						}
 						if (ImGui::BeginTabItem(controllerName.c_str())) {
 							ImGui::Text("Mapping for: %s", controllerName.c_str());
+							static const char* kPlayerTargets[] = { "Auto", "Player 1", "Player 2" };
+							int configuredPlayer = GetConfiguredPlayerForController(whichController);
+							int playerSelection = configuredPlayer + 1;
+							if (ImGui::Combo(("Assigned Player##" + std::to_string(controllerID)).c_str(), &playerSelection, kPlayerTargets, IM_ARRAYSIZE(kPlayerTargets))) {
+								SetConfiguredPlayerForController(whichController, playerSelection - 1);
+							}
 							ImGui::Separator();
 
 							auto& buttonMapping = controllerButtonMappings[whichController];
@@ -211,6 +219,8 @@ extern "C" void ImGui_ShowToolbar() {
 									if (ImGui::Button(("Change##" + std::to_string(internalButton)).c_str())) {
 										remapping_active = true;
 										remapping_internal_button = internalButton;
+										remapping_controller_id = whichController.controllerID;
+										remapping_controller_type = whichController.type;
 									}
 								}
 								ImGui::NextColumn();
