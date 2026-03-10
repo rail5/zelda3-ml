@@ -25,6 +25,12 @@ typedef struct BgLayer {
 
 enum {
   kPpuXPixels = 256 + kPpuExtraLeftRight * 2,
+  kPpuExtraObjVramBase = 0x4200,
+  kPpuExtraObjVramWords = 0x200,
+};
+
+enum {
+  kPpuSpriteFlag_UseExtraObjVram = 1,
 };
 
 typedef uint16_t PpuZbufType;
@@ -125,6 +131,8 @@ struct Ppu {
   PpuPixelPrioBufs bgBuffers[2];
   PpuPixelPrioBufs objBuffer;
   uint16_t vram[0x8000];
+  uint16_t extra_obj_vram[kPpuExtraObjVramWords];
+  uint8_t host_sprite_flags[128];
 };
 
 Ppu* ppu_init();
@@ -136,6 +144,8 @@ uint8_t ppu_read(Ppu* ppu, uint8_t adr);
 void ppu_write(Ppu* ppu, uint8_t adr, uint8_t val);
 void ppu_saveload(Ppu *ppu, SaveLoadFunc *func, void *ctx);
 void PpuBeginDrawing(Ppu *ppu, uint8_t *buffer, size_t pitch, uint32_t render_flags);
+void PpuClearHostSpriteMetadata(Ppu *ppu);
+void PpuSetHostSpriteFlags(Ppu *ppu, int sprite_index, uint8_t flags);
 
 // Returns the current render scale, 1x = 256px, 2x=512px, 4x=1024px
 int PpuGetCurrentRenderScale(Ppu *ppu, uint32_t render_flags);

@@ -254,6 +254,7 @@ static void ZeldaInitializationCode() {
 static void ClearOamBuffer() {  // 80841e
   for (int i = 0; i < 128; i++)
     oam_buf[i].y = 0xf0;
+  PpuClearHostSpriteMetadata(g_zenv.ppu);
 }
 
 static void ZeldaRunGameLoop() {

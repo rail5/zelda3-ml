@@ -14,6 +14,7 @@
 #include "messaging.h"
 #include "ending.h"
 #include "attract.h"
+#include "snes/ppu.h"
 #include "snes/snes_regs.h"
 #include "assets.h"
 
@@ -28,6 +29,8 @@ static void KillAghanim_Func7();
 static void KillAghanim_Func8();
 static void KillAghanim_Func12();
 static uint8 PlaySfx_SetPan(uint8 a);
+
+LinkDmaUploadState g_link_dma_upload_state_by_player[2];
 
 const uint8 kReceiveItem_Tab1[76] = {
   0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 2,
@@ -420,6 +423,33 @@ void NMI_PrepareSprites() {  // 8085fc
   dma_source_addr_13 = dma_source_addr_8 + kLinkDmaSources7[j];
   dma_source_addr_10 = kLinkDmaSources8[pushedblocks_some_index & 3];
   dma_source_addr_15 = dma_source_addr_10 + 0x100;
+
+#define ASSIGN_LINK_DMA_UPLOAD_STATE(dst, selectors) do { \
+    (dst).source_addr_3 = kLinkDmaSources1[(selectors).graphics_index >> 1]; \
+    (dst).source_addr_0 = (dst).source_addr_3 + 0x200; \
+    (dst).source_addr_4 = kLinkDmaSources2[(selectors).graphics_index >> 1]; \
+    (dst).source_addr_1 = (dst).source_addr_4 + 0x200; \
+    (dst).source_addr_5 = kLinkDmaSources3[(selectors).var1 >> 1]; \
+    (dst).source_addr_2 = kLinkDmaSources3[(selectors).var2 >> 1]; \
+    (dst).source_addr_6 = kLinkDmaSources4[(selectors).var3 >> 1]; \
+    (dst).source_addr_11 = (dst).source_addr_6 + 0x180; \
+    (dst).source_addr_7 = ((selectors).var4 == 0x8b) ? 0xe099 : kLinkDmaSources5[(selectors).var4 >> 1]; \
+    (dst).source_addr_12 = (dst).source_addr_7 + 0xc0; \
+    { \
+      int link_dma_anim_index = ((selectors).var5 & 0xf8) >> 3; \
+      (dst).source_addr_8 = kLinkDmaSources6[(selectors).var5]; \
+      (dst).source_addr_13 = (dst).source_addr_8 + kLinkDmaSources7[link_dma_anim_index]; \
+    } \
+    (dst).source_addr_9 = dma_source_addr_9; \
+    (dst).source_addr_10 = dma_source_addr_10; \
+    (dst).source_addr_14 = dma_source_addr_14; \
+    (dst).source_addr_15 = dma_source_addr_15; \
+  } while (0)
+
+  ASSIGN_LINK_DMA_UPLOAD_STATE(g_link_dma_upload_state_by_player[0], g_link_dma_selectors_by_player[0]);
+  ASSIGN_LINK_DMA_UPLOAD_STATE(g_link_dma_upload_state_by_player[1], g_link_dma_selectors_by_player[1]);
+
+#undef ASSIGN_LINK_DMA_UPLOAD_STATE
 
   if (--bg_tile_animation_countdown == 0) {
     bg_tile_animation_countdown = (BYTE(overlay_index) == 0xb5 || BYTE(overlay_index) == 0xbc) ? 0x17 : 9;

@@ -1,11 +1,37 @@
 #include "player_oam.h"
 #include "zelda_rtl.h"
 #include "variables.h"
+#include "snes/ppu.h"
 #include "snes/snes_regs.h"
 #include "player.h"
 #include "misc.h"
 
 #include "ext/GameRAM.h"
+
+static uint16 g_link_oam_slot_offset;
+static uint16 g_link_oam_charnum_offset;
+
+LinkDmaSelectors g_link_dma_selectors_by_player[2];
+
+static void StoreLinkDmaSelectorsForPlayer(int player) {
+  g_link_dma_selectors_by_player[player].graphics_index = link_dma_graphics_index;
+  g_link_dma_selectors_by_player[player].var1 = link_dma_var1;
+  g_link_dma_selectors_by_player[player].var2 = link_dma_var2;
+  g_link_dma_selectors_by_player[player].var3 = link_dma_var3;
+  g_link_dma_selectors_by_player[player].var4 = link_dma_var4;
+  g_link_dma_selectors_by_player[player].var5 = link_dma_var5;
+}
+
+static void MarkLinkOamEntryUsesHostVram(int oam_pos) {
+  if (g_link_oam_charnum_offset != 0)
+    PpuSetHostSpriteFlags(g_zenv.ppu, oam_pos, kPpuSpriteFlag_UseExtraObjVram);
+}
+
+static uint16 ApplyLinkOamCharnumOffset(uint16 charnum) {
+  if (charnum == 0xffff)
+    return charnum;
+  return charnum + g_link_oam_charnum_offset;
+}
 
 static const int8 kPlayerOam_StairsOffsY[] = {
   0, -2, -3, 0, -2, -3, 0, 0, 0, 0, 0, 0, 0, -2, -3, 0,
@@ -777,6 +803,7 @@ void LinkOam_Main_impl() {  // 8da18e
   uint8 scratch_0_var = (draw_water_ripples_or_grass != 0);
   oam_priority_value = kPlayerOam_FloorOamPrio[link_is_on_lower_level];
   sort_sprites_offset_into_oam_buffer = kPlayerOam_SortSpritesOffs[(uint8)sort_sprites_setting];
+  sort_sprites_offset_into_oam_buffer += g_link_oam_slot_offset;
 
   uint8 yt, rt;
 
@@ -945,7 +972,8 @@ continue_after_set:
         oam_buf[oam_pos].x = kPlayerOam_Spr1X[j] + xcoord;
         uint16 q = WORD(kPlayerOam_Prio[bank1 >> 1]);
         q = (bank1 & 1) ? q << 4 : q;
-        WORD(oam_buf[oam_pos].charnum) = (q & 0xc000) | oam_priority_value | link_palette_bits_of_oam | 4;
+        WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset((q & 0xc000) | oam_priority_value | link_palette_bits_of_oam | 4);
+        MarkLinkOamEntryUsesHostVram(oam_pos);
         bytewise_extended_oam[oam_pos] = 0;
       }
     }
@@ -959,7 +987,8 @@ continue_after_set:
       oam_buf[oam_pos].x = kPlayerOam_Spr2X[j] + xcoord;
       uint16 q = WORD(kPlayerOam_Prio[bank2 >> 1]);
       q = (bank2 & 1) ? q << 4 : q;
-      WORD(oam_buf[oam_pos].charnum) = (q & 0xc000) | oam_priority_value | link_palette_bits_of_oam | 0x14;
+      WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset((q & 0xc000) | oam_priority_value | link_palette_bits_of_oam | 0x14);
+      MarkLinkOamEntryUsesHostVram(oam_pos);
       bytewise_extended_oam[oam_pos] = 0;
     }
   }
@@ -996,7 +1025,8 @@ continue_after_set:
           td = (td & ~0xe00) | 0x600;
         if (oam_pal)
           td = (td & ~0xe00) | oam_pal;
-        WORD(oam_buf[oam_pos].charnum) = td;
+        WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset(td);
+        MarkLinkOamEntryUsesHostVram(oam_pos);
         oam_buf[oam_pos].x = oam_x;
         oam_buf[oam_pos].y = oam_y;
         uint16 xt = (uint8)xcoord - oam_x;
@@ -1028,7 +1058,8 @@ continue_after_set:
       if (td == 0xffff)
         continue;
       td = (td & 0xc1ff) | oam_pal | oam_priority_value;
-      WORD(oam_buf[oam_pos].charnum) = td;
+      WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset(td);
+      MarkLinkOamEntryUsesHostVram(oam_pos);
       WORD(oam_buf[oam_pos].x) = oam_x | oam_y << 8;
       bytewise_extended_oam[oam_pos] = sr.r12 | bit9_of_xcoord;
       oam_x += 8;
@@ -1084,13 +1115,15 @@ continue_after_set:
       uint16 td = sp->tile << 8;
 
       if ((td & 0xf000) != 0xf000) {
-        WORD(oam_buf[oam_pos].charnum) = td & 0xf000 | oam_priority_value | link_palette_bits_of_oam;
+        WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset(td & 0xf000 | oam_priority_value | link_palette_bits_of_oam);
+        MarkLinkOamEntryUsesHostVram(oam_pos);
         WORD(oam_buf[oam_pos].x) = oam_x | oam_y << 8;
         bytewise_extended_oam[oam_pos] = 2 + (oam_x >= 0xf8);
       }
 
       if ((td << 4 & 0xf000) != 0xf000) {
-        WORD(oam_buf[oam_pos+1].charnum) = td << 4 & 0xf000 | oam_priority_value | link_palette_bits_of_oam | 2;
+        WORD(oam_buf[oam_pos+1].charnum) = ApplyLinkOamCharnumOffset(td << 4 & 0xf000 | oam_priority_value | link_palette_bits_of_oam | 2);
+        MarkLinkOamEntryUsesHostVram(oam_pos + 1);
         WORD(oam_buf[oam_pos+1].x) = (uint8)(xcoord) | (ycoord - zcoord + 8) << 8;
         bytewise_extended_oam[oam_pos+1] = 2;
       }
@@ -1134,10 +1167,16 @@ continue_after_set:
 }
 
 void LinkOam_Main() {
+  g_link_oam_charnum_offset = game_ram.multiplayer_initialized ? 0x20 : 0;
+  g_link_oam_slot_offset = 0x40;
   switch_player();
   LinkOam_Main_impl();
+  StoreLinkDmaSelectorsForPlayer(1);
+  g_link_oam_charnum_offset = 0;
+  g_link_oam_slot_offset = 0;
   switch_player();
   LinkOam_Main_impl();
+  StoreLinkDmaSelectorsForPlayer(0);
 }
 
 uint8 FindMostSignificantBit(uint8 v) {  // 8daac3
@@ -1194,7 +1233,8 @@ int LinkOam_CalculateSwordSparklePosition(int oam_pos, uint8 oam_x, uint8 oam_y)
   td = td & ~0x3000 | oam_priority_value;
   if (!link_palette_bits_of_oam)
     td = td & ~0xe00 | 0x600;
-  WORD(oam_buf[oam_pos].charnum) = td;
+  WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset(td);
+  MarkLinkOamEntryUsesHostVram(oam_pos);
   player_oam_x_offset = kSwordOamXOffs_Good[i];
   player_oam_y_offset = kSwordOamYOffs_Good[i];
   oam_x += player_oam_x_offset;
@@ -1213,7 +1253,8 @@ void LinkOam_UnusedWeaponSettings(int r4loc, uint8 oam_x, uint8 oam_y) {  // 8da
   for (int i = 0; i != 4; i++, j++) {
     uint8 st = kPlayerOam_DrawOam_Throwing_State[j];
     if (st != 0xff) {
-      WORD(oam->charnum) = 0x2609 & ~0x3000 | oam_priority_value;
+      WORD(oam->charnum) = ApplyLinkOamCharnumOffset(0x2609 & ~0x3000 | oam_priority_value);
+      MarkLinkOamEntryUsesHostVram(oam_pos);
       oam->x = oam_x + kPlayerOam_DrawOam_Throwing_X[j];
       oam->y = oam_y + kPlayerOam_DrawOam_Throwing_Y[j];
       bytewise_extended_oam[oam_pos] = 0;

@@ -4,6 +4,27 @@
 
 #pragma once
 
+typedef struct LinkDmaUploadState {
+  uint16 source_addr_0;
+  uint16 source_addr_1;
+  uint16 source_addr_2;
+  uint16 source_addr_3;
+  uint16 source_addr_4;
+  uint16 source_addr_5;
+  uint16 source_addr_6;
+  uint16 source_addr_7;
+  uint16 source_addr_8;
+  uint16 source_addr_9;
+  uint16 source_addr_10;
+  uint16 source_addr_11;
+  uint16 source_addr_12;
+  uint16 source_addr_13;
+  uint16 source_addr_14;
+  uint16 source_addr_15;
+} LinkDmaUploadState;
+
+extern LinkDmaUploadState g_link_dma_upload_state_by_player[2];
+
 
 
 

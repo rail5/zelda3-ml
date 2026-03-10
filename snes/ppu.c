@@ -45,6 +45,8 @@ void ppu_free(Ppu* ppu) {
 
 void ppu_reset(Ppu* ppu) {
   memset(ppu->vram, 0, sizeof(ppu->vram));
+  memset(ppu->extra_obj_vram, 0, sizeof(ppu->extra_obj_vram));
+  memset(ppu->host_sprite_flags, 0, sizeof(ppu->host_sprite_flags));
   ppu->lastBrightnessMult = 0xff;
   ppu->lastMosaicModulo = 0xff;
   ppu->extraLeftCur = 0;
@@ -104,6 +106,15 @@ void ppu_reset(Ppu* ppu) {
   ppu->forcedBlank = true;
   ppu->brightness = 0;
   ppu->mode = 0;
+}
+
+void PpuClearHostSpriteMetadata(Ppu *ppu) {
+  memset(ppu->host_sprite_flags, 0, sizeof(ppu->host_sprite_flags));
+}
+
+void PpuSetHostSpriteFlags(Ppu *ppu, int sprite_index, uint8_t flags) {
+  if ((unsigned)sprite_index < 128)
+    ppu->host_sprite_flags[sprite_index] = flags;
 }
 
 void ppu_saveload(Ppu *ppu, SaveLoadFunc *func, void *ctx) {
@@ -1287,7 +1298,14 @@ static bool ppu_evaluateSprites(Ppu* ppu, int line) {
         // figure out which tile this uses, looping within 16x16 pages, and get it's data
         int usedCol = oam1 & 0x4000 ? spriteSize - 1 - col : col;
         int usedTile = ((((oam1 & 0xff) >> 4) + (row >> 3)) << 4) | (((oam1 & 0xf) + (usedCol >> 3)) & 0xf);
-        uint16 *addr = &ppu->vram[(objAdr + usedTile * 16 + (row & 0x7)) & 0x7fff];
+        uint16 tile_addr = (objAdr + usedTile * 16 + (row & 0x7)) & 0x7fff;
+        uint16 *addr;
+        if ((ppu->host_sprite_flags[index >> 1] & kPpuSpriteFlag_UseExtraObjVram) != 0 &&
+            tile_addr >= kPpuExtraObjVramBase && tile_addr < kPpuExtraObjVramBase + kPpuExtraObjVramWords) {
+          addr = &ppu->extra_obj_vram[tile_addr - kPpuExtraObjVramBase];
+        } else {
+          addr = &ppu->vram[tile_addr];
+        }
         uint32 plane = addr[0] | addr[8] << 16;
         // go over each pixel
         int px_left = IntMax(-(col + x + kPpuExtraLeftRight), 0);

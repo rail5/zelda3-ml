@@ -2,10 +2,12 @@
 #include "zelda_rtl.h"
 #include "variables.h"
 #include "messaging.h"
+#include "misc.h"
 #include "snes/snes_regs.h"
 #include "snes/ppu.h"
 #include "assets.h"
 #include "audio.h"
+#include "ext/GameRAM.h"
 
 static const uint8 kNmiVramAddrs[] = {
   0, 0, 4, 8, 12, 8, 12, 0, 4, 0, 8, 4, 12, 4, 12, 0,
@@ -189,6 +191,8 @@ void NMI_ReadJoypads(uint16 joypad_input_1, uint16 joypad_input_2) {  // 8083d1
 
 void NMI_DoUpdates() {  // 8089e0
   if (!nmi_disable_core_updates) {
+    const LinkDmaUploadState *link_dma_state_p2 = &g_link_dma_upload_state_by_player[1];
+
     memcpy(&g_zenv.vram[0x4100], &kLinkGraphics[dma_source_addr_0 - 0x8000], 0x40);
     memcpy(&g_zenv.vram[0x4120], &kLinkGraphics[dma_source_addr_1 - 0x8000], 0x40);
     memcpy(&g_zenv.vram[0x4140], &kLinkGraphics[dma_source_addr_2 - 0x8000], 0x20);
@@ -213,6 +217,27 @@ void NMI_DoUpdates() {  // 8089e0
     memcpy(&g_zenv.vram[0x4300], g_ram_access(dma_source_addr_18), 0x40);
     memcpy(&g_zenv.vram[0x4320], g_ram_access(dma_source_addr_19), 0x40);
     memcpy(&g_zenv.vram[0x4340], g_ram_access(0xbd80), 0x40);
+
+    if (game_ram.multiplayer_initialized) {
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x100], &kLinkGraphics[link_dma_state_p2->source_addr_0 - 0x8000], 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x120], &kLinkGraphics[link_dma_state_p2->source_addr_1 - 0x8000], 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x140], &kLinkGraphics[link_dma_state_p2->source_addr_2 - 0x8000], 0x20);
+
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x000], &kLinkGraphics[link_dma_state_p2->source_addr_3 - 0x8000], 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x020], &kLinkGraphics[link_dma_state_p2->source_addr_4 - 0x8000], 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x040], &kLinkGraphics[link_dma_state_p2->source_addr_5 - 0x8000], 0x20);
+
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x050], g_ram_access(link_dma_state_p2->source_addr_6), 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x070], g_ram_access(link_dma_state_p2->source_addr_7), 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x090], g_ram_access(link_dma_state_p2->source_addr_8), 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x0b0], g_ram_access(link_dma_state_p2->source_addr_9), 0x20);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x0c0], g_ram_access(link_dma_state_p2->source_addr_10), 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x150], g_ram_access(link_dma_state_p2->source_addr_11), 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x170], g_ram_access(link_dma_state_p2->source_addr_12), 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x190], g_ram_access(link_dma_state_p2->source_addr_13), 0x40);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x1b0], g_ram_access(link_dma_state_p2->source_addr_14), 0x20);
+      memcpy(&g_zenv.ppu->extra_obj_vram[0x1c0], g_ram_access(link_dma_state_p2->source_addr_15), 0x40);
+    }
 
     if (BYTE(flag_travel_bird)) {
       memcpy(&g_zenv.vram[0x40e0], g_ram_access(dma_source_addr_20), 0x40);

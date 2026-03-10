@@ -6,6 +6,17 @@ typedef struct SwordResult {
   uint8 r12;
 } SwordResult;
 
+typedef struct LinkDmaSelectors {
+  uint16 graphics_index;
+  uint16 var1;
+  uint16 var2;
+  uint8 var3;
+  uint8 var4;
+  uint8 var5;
+} LinkDmaSelectors;
+
+extern LinkDmaSelectors g_link_dma_selectors_by_player[2];
+
 bool PlayerOam_WantInvokeSword();
 void CalculateSwordHitBox();
 void LinkOam_Main();
