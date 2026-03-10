@@ -772,7 +772,7 @@ void Module09_00_PlayerControl() {  // 82a53c
   }
   if (trigger_special_entrance)
     Overworld_AnimateEntrance();
-  Link_Main();
+  Link_MainForAllPlayers();
   if (super_bomb_indicator_unk2 != 0xff)
     Hud_SuperBombIndicator();
   current_area_of_player = (link_y_coord & 0x1e00) >> 5 | (link_x_coord & 0x1e00) >> 8;

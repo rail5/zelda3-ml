@@ -6616,7 +6616,7 @@ void Module07_00_PlayerControl() {  // 8288de
     }
     Hud_HandleItemSwitchInputs();
   }
-  Link_Main();
+  Link_MainForAllPlayers();
 }
 
 void Module07_01_SubtileTransition() {  // 82897c

@@ -464,15 +464,7 @@ int main(int argc, char** argv) {
         whichController.type = CT_GameController;
         int b = ResolveSdlButton(whichController, event.cbutton.button);
 
-        // DEBUG TESTING:
-        // L1: Switch player
-        // R1: SHOULDER button: init multi
         int player = GetPlayerForController(event.cbutton.which);
-        if (b == kGamepadBtn_L1 && event.type == SDL_CONTROLLERBUTTONDOWN) {
-          switch_player();
-        } else if (b == kGamepadBtn_R1 && event.type == SDL_CONTROLLERBUTTONDOWN) {
-          _test_init_multi();
-        }
 
         if (b >= 0)
           HandleGamepadInput(player, b, event.type == SDL_CONTROLLERBUTTONDOWN);

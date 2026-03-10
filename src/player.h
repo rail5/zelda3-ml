@@ -42,6 +42,7 @@ void Dungeon_HandleLayerChange();
 void CacheCameraProperties();
 void CheckAbilityToSwim();
 void Link_Main();
+void Link_MainForAllPlayers();
 void Link_ControlHandler();
 void LinkState_Default();
 void HandleLink_From1D();

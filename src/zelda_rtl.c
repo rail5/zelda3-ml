@@ -329,6 +329,7 @@ static void EmuSyncMemoryRegion(void *ptr, size_t n) {
 
 static void Startup_InitializeMemory() {  // 8087c0
   memset(g_ram_access(0x0), 0, 0x2000);
+  invalidate_multi_init();
   main_palette_buffer[0] = 0;
   srm_var1 = 0;
   uint8 *sram = g_zenv.sram;
@@ -380,6 +381,7 @@ static void InternalSaveLoad(SaveLoadFunc *func, void *ctx) {
 
 void ZeldaReset(bool preserve_sram) {
   frame_ctr_dbg = 0;
+  invalidate_multi_init();
   dma_reset(g_zenv.dma);
   ppu_reset(g_zenv.ppu);
   memset(g_zenv.ram, 0, 0x20000);
@@ -532,7 +534,7 @@ void StateRecorder_Load(StateRecorder *sr, FILE *f, bool replay_mode) {
   }
 
   // Load g_ram state from file
-  uint8_t g_ram_snapshot[0xA5];
+  uint8_t g_ram_snapshot[GAME_RAM_SNAPSHOT_SIZE];
   ReadFromFile(f, g_ram_snapshot, sizeof(g_ram_snapshot));
   load_g_ram_snapshot_from_savestate(g_ram_snapshot);
 }
@@ -563,8 +565,8 @@ void StateRecorder_Save(StateRecorder *sr, FILE *f) {
   fwrite(arr.data, 1, arr.size, f);
 
   // Copy g_ram state
-  uint8_t* g_ram_copy = g_ram_snapshot_for_savestate(); // Size: 0xA5
-  fwrite(g_ram_copy, 1, 0xA5, f);
+  uint8_t* g_ram_copy = g_ram_snapshot_for_savestate();
+  fwrite(g_ram_copy, 1, GAME_RAM_SNAPSHOT_SIZE, f);
   g_ram_snapshot_free(g_ram_copy); // Free the temporary copy
 
   ByteArray_Destroy(&arr);

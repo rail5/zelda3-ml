@@ -12,6 +12,8 @@
 #include "misc.h"
 #include "player_oam.h"
 #include "sprite_main.h"
+#include "nmi.h"
+#include "ext/GameRAM.h"
 
 static bool g_ApplyLinksMovementToCamera_called;
 
@@ -143,6 +145,20 @@ void Link_Main() {  // 878000
   if (!flag_is_link_immobilized)
     Link_ControlHandler();
   HandleSomariaAndGraves();
+}
+
+void Link_MainForAllPlayers() {
+  ensure_multi_initialized();
+
+  NMI_ApplyJoypadStateForPlayer(0);
+  Link_Main();
+
+  switch_player();
+  NMI_ApplyJoypadStateForPlayer(1);
+  Link_Main();
+
+  switch_player();
+  NMI_ApplyJoypadStateForPlayer(0);
 }
 
 void Link_ControlHandler() {  // 87807f
