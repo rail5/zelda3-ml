@@ -9,6 +9,7 @@
 #include "ancilla.h"
 #include "player.h"
 #include "misc.h"
+#include "zelda_rtl.h"
 #include "overlord.h"
 #include "tile_detect.h"
 #include "sprite_main.h"
@@ -1834,16 +1835,17 @@ void Sprite_PrepOamCoord(int k, PrepOamCoordsRet *ret) {  // 86e416
 
 bool Sprite_PrepOamCoordOrDoubleRet(int k, PrepOamCoordsRet *ret) {  // 86e41e
   sprite_pause[k] = 0;
-  uint16 x = cur_sprite_x - BG2HOFS_copy2;
+  int x = (int)cur_sprite_x - BG2HOFS_copy2;
   uint16 y = cur_sprite_y - BG2VOFS_copy2;
   bool out_of_bounds = false;
   R0 = x;
   R2 = y - sprite_z[k];
   ret->flags = sprite_oam_flags[k] ^ sprite_obj_prio[k];
   ret->r4 = 0;
-  int xt = (enhanced_features0 & kFeatures0_ExtendScreen64) ? 0x40 : 0;
+  int extra_left = ZeldaGetPpuExtraLeft();
+  int extra_right = ZeldaGetPpuExtraRight();
 
-  if ((uint16)(x + 0x40 + xt) >= (0x170 + xt * 2) ||
+  if (x < -(0x40 + extra_left) || x >= 0x130 + extra_right ||
       (uint16)(y + 0x40) >= 0x170 && !(sprite_flags4[k] & 0x20)) {
     sprite_pause[k]++;
     if (!(sprite_defl_bits[k] & 0x80))

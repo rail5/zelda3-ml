@@ -20,6 +20,10 @@ uint32 g_wanted_zelda_features;
 
 static void Startup_InitializeMemory();
 
+static uint16 ReadPlayerStateU16(const uint8 *state, int offset) {
+  return state[offset] | state[offset + 1] << 8;
+}
+
 typedef struct SimpleHdma {
   const uint8 *table;
   const uint8 *indir_ptr;
@@ -171,7 +175,46 @@ static void ConfigurePpuSideSpace() {
     extra_left = kPpuExtraLeftRight, extra_right = kPpuExtraLeftRight;
     extra_bottom = 16;
   }
+
+  if (game_ram.multiplayer_initialized && (mod == 7 || mod == 9)) {
+    enum { kMultiplayerViewportPadding = 24 };
+    uint16 player1_x = game_ram.use_player2 ? ReadPlayerStateU16(game_ram.player1_core_state, 2) : link_x_coord;
+    uint16 player2_x = game_ram.use_player2 ? link_x_coord : ReadPlayerStateU16(game_ram.player2_core_state, 2);
+
+    int player1_screen_x = (int)player1_x - BG2HOFS_copy2;
+    int player2_screen_x = (int)player2_x - BG2HOFS_copy2;
+    int min_screen_x = IntMin(player1_screen_x, player2_screen_x);
+    int max_screen_x = IntMax(player1_screen_x, player2_screen_x);
+
+    int needed_left = IntMax(kMultiplayerViewportPadding - min_screen_x, 0);
+    int needed_right = IntMax(max_screen_x - (255 - kMultiplayerViewportPadding), 0);
+
+    extra_left = IntMin(extra_left, needed_left);
+    extra_right = IntMin(extra_right, needed_right);
+  }
+
   PpuSetExtraSideSpace(g_zenv.ppu, extra_left, extra_right, extra_bottom);
+}
+
+void ZeldaPreparePpuSideSpace(uint32 render_flags) {
+  if (g_zenv.ppu->extraLeftRight != 0 || render_flags & kPpuRenderFlags_Height240)
+    ConfigurePpuSideSpace();
+}
+
+int ZeldaGetPpuRenderWidth() {
+  return 256 + g_zenv.ppu->extraLeftCur + g_zenv.ppu->extraRightCur;
+}
+
+int ZeldaGetPpuExtraLeft() {
+  return g_zenv.ppu->extraLeftCur;
+}
+
+int ZeldaGetPpuExtraRight() {
+  return g_zenv.ppu->extraRightCur;
+}
+
+uint16 ZeldaGetScreenX(uint16 world_x) {
+  return world_x - BG2HOFS_copy2;
 }
 
 void ZeldaDrawPpuFrame(uint8 *pixel_buffer, size_t pitch, uint32 render_flags) {
@@ -196,8 +239,7 @@ void ZeldaDrawPpuFrame(uint8 *pixel_buffer, size_t pitch, uint32 render_flags) {
       PpuSetMode7PerspectiveCorrection(g_zenv.ppu, 0, 0);
   }
 
-  if (g_zenv.ppu->extraLeftRight != 0 || render_flags & kPpuRenderFlags_Height240)
-    ConfigurePpuSideSpace();
+  ZeldaPreparePpuSideSpace(render_flags);
 
   int height = render_flags & kPpuRenderFlags_Height240 ? 240 : 224;
 

@@ -26,6 +26,7 @@
 #include "load_gfx.h"
 #include "util.h"
 #include "audio.h"
+#include "features.h"
 
 #include "ext/RemapSdlButton.h"
 #include "ext/ImGui_bridge.h"
@@ -49,6 +50,7 @@ static void HandleVolumeAdjustment(int volume_adjustment);
 static void LoadAssets();
 static void SwitchDirectory();
 static int GetPlayerForController(int controller_id, enum ControllerType type);
+static void ConfigureMultiplayerViewport();
 
 enum {
   kDefaultFullscreen = 0,
@@ -124,6 +126,10 @@ void ChangeWindowScale(int scale_step) {
   }
 }
 
+static void ConfigureMultiplayerViewport() {
+  g_config.extended_aspect_ratio = kPpuExtraLeftRight;
+}
+
 #define RESIZE_BORDER 20
 static SDL_HitTestResult HitTestCallback(SDL_Window *win, const SDL_Point *pt, void *data) {
   uint32 flags = SDL_GetWindowFlags(win);
@@ -154,6 +160,7 @@ static SDL_HitTestResult HitTestCallback(SDL_Window *win, const SDL_Point *pt, v
 
 static void DrawPpuFrameWithPerf() {
   int render_scale = PpuGetCurrentRenderScale(g_zenv.ppu, g_ppu_render_flags);
+  ZeldaPreparePpuSideSpace(g_ppu_render_flags);
   uint8 *pixel_buffer = 0;
   int pitch = 0;
 
@@ -295,6 +302,7 @@ int main(int argc, char** argv) {
     SwitchDirectory();
   }
   ParseConfigFile(config_file);
+  ConfigureMultiplayerViewport();
   LoadAssets();
   LoadLinkGraphics();
 

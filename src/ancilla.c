@@ -8,6 +8,7 @@
 #include "tile_detect.h"
 #include "player.h"
 #include "misc.h"
+#include "zelda_rtl.h"
 #include "dungeon.h"
 #include "sprite_main.h"
 #include "assets.h"
@@ -346,8 +347,8 @@ int Ancilla_AllocHigh() {
 
 static void Ancilla_SetOam(OamEnt *oam, uint16 x, uint16 y, uint8 charnum, uint8 flags, uint8 big) {
   uint8 yval = 0xf0;
-  int xt = enhanced_features0 & kFeatures0_ExtendScreen64 ? 0x40 : 0;
-  if ((uint16)(x + xt) < 256 + xt * 2 && y < 256) {
+  int screen_x = (int16)x;
+  if (screen_x >= -ZeldaGetPpuExtraLeft() && screen_x < 256 + ZeldaGetPpuExtraRight() && y < 256) {
     big |= (x >> 8) & 1;
     oam->x = x;
     if (y < 0xf0)
@@ -362,8 +363,7 @@ static void Ancilla_SetOam(OamEnt *oam, uint16 x, uint16 y, uint8 charnum, uint8
 static void Ancilla_SetOam_Safe(OamEnt *oam, uint16 x, uint16 y, uint8 charnum, uint8 flags, uint8 big) {
   uint8 yval = 0xf0;
   oam->x = x;
-  int xt = enhanced_features0 & kFeatures0_ExtendScreen64 ? 0x48 : 0;
-  if ((uint16)(x + 0x80) < (0x180 + xt)) {
+  if ((int16)x >= -(0x80 + ZeldaGetPpuExtraLeft()) && (int16)x < 0x100 + ZeldaGetPpuExtraRight()) {
     big |= (x >> 8) & 1;
     if ((uint16)(y + 0x10) < 0x100)
       yval = y;

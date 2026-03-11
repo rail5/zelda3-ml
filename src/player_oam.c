@@ -797,7 +797,7 @@ void LinkOam_Main_impl() {  // 8da18e
     link_y_coord += kPlayerOam_StairsOffsY[t];
   }
 
-  uint8 xcoord = link_x_coord - BG2HOFS_copy2;
+  uint16 xcoord = link_x_coord - BG2HOFS_copy2;
   uint8 ycoord = link_y_coord - BG2VOFS_copy2;
   player_oam_x_offset = player_oam_y_offset = 0x80;
   uint8 scratch_0_var = (draw_water_ripples_or_grass != 0);
@@ -968,13 +968,14 @@ continue_after_set:
         link_dma_var1 = bank1 * 2;
         int oam_pos = ((scratch_0_var ? kPlayerOam_Tab19B : kPlayerOam_Tab19A)[r4loc] + sort_sprites_offset_into_oam_buffer) >> 2;
         uint8 zt = ((int16)link_z_coord >= 0 || BYTE(link_z_coord) < 0xf0) ? BYTE(link_z_coord) : 0;
+        uint16 oam_x = (int8)kPlayerOam_Spr1X[j] + xcoord;
         oam_buf[oam_pos].y = kPlayerOam_Spr1Y[j] + ycoord - zt;
-        oam_buf[oam_pos].x = kPlayerOam_Spr1X[j] + xcoord;
+        oam_buf[oam_pos].x = oam_x;
         uint16 q = WORD(kPlayerOam_Prio[bank1 >> 1]);
         q = (bank1 & 1) ? q << 4 : q;
         WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset((q & 0xc000) | oam_priority_value | link_palette_bits_of_oam | 4);
         MarkLinkOamEntryUsesHostVram(oam_pos);
-        bytewise_extended_oam[oam_pos] = 0;
+        bytewise_extended_oam[oam_pos] = (oam_x >> 8) & 1;
       }
     }
 
@@ -983,13 +984,14 @@ continue_after_set:
       link_dma_var2 = bank2 * 2;
       int oam_pos = ((scratch_0_var ? kPlayerOam_Tab20B : kPlayerOam_Tab20A)[r4loc] + sort_sprites_offset_into_oam_buffer) >> 2;
       uint8 zt = ((int16)link_z_coord >= 0 || BYTE(link_z_coord) < 0xf0) ? BYTE(link_z_coord) : 0;
+      uint16 oam_x = (int8)kPlayerOam_Spr2X[j] + xcoord;
       oam_buf[oam_pos].y = kPlayerOam_Spr2Y[j] + ycoord - zt;
-      oam_buf[oam_pos].x = kPlayerOam_Spr2X[j] + xcoord;
+      oam_buf[oam_pos].x = oam_x;
       uint16 q = WORD(kPlayerOam_Prio[bank2 >> 1]);
       q = (bank2 & 1) ? q << 4 : q;
       WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset((q & 0xc000) | oam_priority_value | link_palette_bits_of_oam | 0x14);
       MarkLinkOamEntryUsesHostVram(oam_pos);
-      bytewise_extended_oam[oam_pos] = 0;
+      bytewise_extended_oam[oam_pos] = (oam_x >> 8) & 1;
     }
   }
   SwordResult sr;
@@ -999,7 +1001,7 @@ continue_after_set:
   } else if (PlayerOam_WantInvokeSword() && !LinkOam_SetWeaponVRAMOffsets(r2, &sr)) {
     uint8 zcoord = ((int16)link_z_coord >= 0 || BYTE(link_z_coord) < 0xf0) ? BYTE(link_z_coord) : 0;
     uint8 oam_y = kDrawSword_y[r2] + ycoord - zcoord;
-    uint8 oam_x = kDrawSword_x[r2] + xcoord;
+    uint16 oam_x = (int8)kDrawSword_x[r2] + xcoord;
 
     if ((link_item_in_hand & 2) ? (player_handler_timer == 2 && link_delay_timer_spin_attack == 15) : ((link_item_in_hand & 5) == 0)) {
       player_oam_y_offset = kSwordOamYOffs[r2];
@@ -1029,9 +1031,7 @@ continue_after_set:
         MarkLinkOamEntryUsesHostVram(oam_pos);
         oam_buf[oam_pos].x = oam_x;
         oam_buf[oam_pos].y = oam_y;
-        uint16 xt = (uint8)xcoord - oam_x;
-        if ((int16)xt < 0) xt = -xt;
-        bytewise_extended_oam[oam_pos] = sr.r12 | (xt >= 0x80);
+        bytewise_extended_oam[oam_pos] = sr.r12 | ((oam_x >> 8) & 1);
         oam_pos++;
       }
       oam_x += 8;
@@ -1044,7 +1044,7 @@ continue_after_set:
   if (link_shield_type && sram_progress_indicator && !LinkOam_SetEquipmentVRAMOffsets(r2, &sr)) {
     uint8 zcoord = ((int16)link_z_coord >= 0 || BYTE(link_z_coord) < 0xf0) ? BYTE(link_z_coord) : 0;
     uint8 oam_y = kShieldStuff_y[r2] + ycoord - 1 - zcoord;
-    uint8 oam_x = kShieldStuff_x[r2] + xcoord;
+    uint16 oam_x = (int8)kShieldStuff_x[r2] + xcoord;
 
     LinkOam_CalculateXOffsetRelativeLink(kShieldStuff_x[r2]);
 
@@ -1061,7 +1061,7 @@ continue_after_set:
       WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset(td);
       MarkLinkOamEntryUsesHostVram(oam_pos);
       WORD(oam_buf[oam_pos].x) = oam_x | oam_y << 8;
-      bytewise_extended_oam[oam_pos] = sr.r12 | bit9_of_xcoord;
+      bytewise_extended_oam[oam_pos] = sr.r12 | ((oam_x >> 8) & 1);
       oam_x += 8;
       if (i == 1)
         oam_x -= 16, oam_y += 8;
@@ -1082,7 +1082,7 @@ continue_after_set:
         int shadow_idx = (link_auxiliary_state != 0) && (link_auxiliary_state != 1 || !link_cape_mode);
         uint16 oam_y = link_y_coord - BG2VOFS_copy2 + kOffsToShadowGivenDir_Y[link_direction_facing_mirror >> 1];
         if (oam_y < 256) {
-          uint8 oam_x = xcoord + kOffsToShadowGivenDir_X[link_direction_facing_mirror >> 1];
+          uint16 oam_x = xcoord + (int8)kOffsToShadowGivenDir_X[link_direction_facing_mirror >> 1];
           int oam_pos = ((scratch_0_var ? kShadow_oam_indexes_1 : kShadow_oam_indexes_0)[r4loc] + sort_sprites_offset_into_oam_buffer)>>2;
 
           uint16 td = kLinkShadows_Chardata[shadow_idx*2] & ~0x3000 | oam_priority_value_2;
@@ -1090,10 +1090,10 @@ continue_after_set:
             td = td & ~0xe00 | 0x600;
           WORD(oam_buf[oam_pos+0].charnum) = td;
           WORD(oam_buf[oam_pos+1].charnum) = td & ~0xC000 | 0x4000;
-          WORD(oam_buf[oam_pos+0].x) = (uint8)oam_x | oam_y << 8;
-          WORD(oam_buf[oam_pos+1].x) = (uint8)(oam_x + 8) | oam_y << 8;
-          bytewise_extended_oam[oam_pos+0] = 0;
-          bytewise_extended_oam[oam_pos+1] = 0;
+          WORD(oam_buf[oam_pos+0].x) = oam_x | oam_y << 8;
+          WORD(oam_buf[oam_pos+1].x) = (oam_x + 8) | oam_y << 8;
+          bytewise_extended_oam[oam_pos+0] = (oam_x >> 8) & 1;
+          bytewise_extended_oam[oam_pos+1] = ((oam_x + 8) >> 8) & 1;
         }
       }
     }
@@ -1111,28 +1111,29 @@ continue_after_set:
       const LinkSpriteBody *sp = &kLinkSpriteBodys[j];
 
       uint8 oam_y = ycoord + sp->y - zcoord;
-      uint8 oam_x = xcoord + sp->x;
+      uint16 oam_x = xcoord + sp->x;
       uint16 td = sp->tile << 8;
 
       if ((td & 0xf000) != 0xf000) {
         WORD(oam_buf[oam_pos].charnum) = ApplyLinkOamCharnumOffset(td & 0xf000 | oam_priority_value | link_palette_bits_of_oam);
         MarkLinkOamEntryUsesHostVram(oam_pos);
         WORD(oam_buf[oam_pos].x) = oam_x | oam_y << 8;
-        bytewise_extended_oam[oam_pos] = 2 + (oam_x >= 0xf8);
+        bytewise_extended_oam[oam_pos] = 2 | ((oam_x >> 8) & 1);
       }
 
       if ((td << 4 & 0xf000) != 0xf000) {
         WORD(oam_buf[oam_pos+1].charnum) = ApplyLinkOamCharnumOffset(td << 4 & 0xf000 | oam_priority_value | link_palette_bits_of_oam | 2);
         MarkLinkOamEntryUsesHostVram(oam_pos + 1);
-        WORD(oam_buf[oam_pos+1].x) = (uint8)(xcoord) | (ycoord - zcoord + 8) << 8;
-        bytewise_extended_oam[oam_pos+1] = 2;
+        WORD(oam_buf[oam_pos+1].x) = xcoord | (ycoord - zcoord + 8) << 8;
+        bytewise_extended_oam[oam_pos+1] = 2 | ((xcoord >> 8) & 1);
       }
     }
   }
 
   uint16 t;
+  int render_width = ZeldaGetPpuRenderWidth();
   bool hide_shadow = true;
-  if (is_standing_in_doorway && ((t = link_x_coord - BG2HOFS_copy2) < 4 || t >= 252 || (t = link_y_coord - BG2VOFS_copy2) < 4 || t >= 224) ||
+  if (is_standing_in_doorway && ((t = ZeldaGetScreenX(link_x_coord)) < 4 || t >= render_width - 4 || (t = link_y_coord - BG2VOFS_copy2) < 4 || t >= 224) ||
       (hide_shadow = false,
       submodule_index == 0 && countdown_for_blink && --countdown_for_blink >= 4 && (countdown_for_blink & 1) == 0 ||
       link_visibility_status == 12 ||
@@ -1142,23 +1143,10 @@ continue_after_set:
 
     // This appears to hide link by setting the extended bits of the oam to hide them from the screen.
     // It doesn't really play well with the widescreen modes, so change how it's done.
-    if (enhanced_features0 & kFeatures0_WidescreenVisualFixes) {
-      OamEnt *oam = &oam_buf[sort_sprites_offset_into_oam_buffer >> 2];
-      for (int i = 0; i < 12; i++) {
-        if (i < shadow_oam_pos || i > shadow_oam_pos + 1)
-          oam[i].y = 0xf0;
-      }
-    } else {
-      uint8 *p = &bytewise_extended_oam[sort_sprites_offset_into_oam_buffer >> 2];
-      WORD(p[0]) = 0x101;
-      WORD(p[2]) = 0x101;
-      WORD(p[4]) = 0x101;
-      WORD(p[6]) = 0x101;
-      WORD(p[8]) = 0x101;
-      WORD(p[10]) = 0x101;
-      // Clear the bit again for the shadow oam so it's not hidden?
-      if (shadow_oam_pos >= 0)
-        WORD(p[shadow_oam_pos]) = 0;
+    OamEnt *oam = &oam_buf[sort_sprites_offset_into_oam_buffer >> 2];
+    for (int i = 0; i < 12; i++) {
+      if (i < shadow_oam_pos || i > shadow_oam_pos + 1)
+        oam[i].y = 0xf0;
     }
   }
 
@@ -1220,7 +1208,7 @@ bool LinkOam_SetEquipmentVRAMOffsets(int r2, SwordResult *sr) {  // 8dabe6
   return false;
 }
 
-int LinkOam_CalculateSwordSparklePosition(int oam_pos, uint8 oam_x, uint8 oam_y) {  // 8dacd5
+int LinkOam_CalculateSwordSparklePosition(int oam_pos, uint16 oam_x, uint8 oam_y) {  // 8dacd5
   if (link_player_handler_state | link_speed_setting)
     return oam_pos;
   if (link_sword_type == 0 || link_sword_type == 1 || link_sword_type == 0xff || !(button_mask_b_y & 0x80) || button_b_frames >= 9)
@@ -1241,12 +1229,11 @@ int LinkOam_CalculateSwordSparklePosition(int oam_pos, uint8 oam_x, uint8 oam_y)
   oam_y += player_oam_y_offset;
   oam_buf[oam_pos].x = oam_x;
   oam_buf[oam_pos].y = oam_y;
-  LinkOam_CalculateXOffsetRelativeLink(player_oam_x_offset);
-  bytewise_extended_oam[oam_pos] = bit9_of_xcoord;
+  bytewise_extended_oam[oam_pos] = (oam_x >> 8) & 1;
   return oam_pos + 1;
 }
 
-void LinkOam_UnusedWeaponSettings(int r4loc, uint8 oam_x, uint8 oam_y) {  // 8dadb6
+void LinkOam_UnusedWeaponSettings(int r4loc, uint16 oam_x, uint8 oam_y) {  // 8dadb6
   int j = link_var30e * 4;
   int oam_pos = ((draw_water_ripples_or_grass != 0 ? kSwordStuff_oam_index_ptrs_1 : kSwordStuff_oam_index_ptrs_0)[r4loc] + sort_sprites_offset_into_oam_buffer)>>2;
   OamEnt *oam = &oam_buf[oam_pos];
@@ -1257,13 +1244,13 @@ void LinkOam_UnusedWeaponSettings(int r4loc, uint8 oam_x, uint8 oam_y) {  // 8da
       MarkLinkOamEntryUsesHostVram(oam_pos);
       oam->x = oam_x + kPlayerOam_DrawOam_Throwing_X[j];
       oam->y = oam_y + kPlayerOam_DrawOam_Throwing_Y[j];
-      bytewise_extended_oam[oam_pos] = 0;
+      bytewise_extended_oam[oam_pos] = (((int8)kPlayerOam_DrawOam_Throwing_X[j] + oam_x) >> 8) & 1;
       oam++, oam_pos++;
     }
   }
 }
 
-void LinkOam_DrawDungeonFallShadow(int r4loc, uint8 xcoord) {  // 8dae3b
+void LinkOam_DrawDungeonFallShadow(int r4loc, uint16 xcoord) {  // 8dae3b
   uint8 yd = tiledetect_which_y_pos[0] - 12 - link_y_coord;
   int yv = yd >= 240 ? 0 :
            yd >= 96 ? 2 :
@@ -1280,12 +1267,12 @@ void LinkOam_DrawDungeonFallShadow(int r4loc, uint8 xcoord) {  // 8dae3b
       WORD(oam_buf[oam_pos].charnum) = td & ~0x3000 | oam_priority_value_2;
       WORD(oam_buf[oam_pos].x) = xcoord | ycoord << 8;
     }
-    bytewise_extended_oam[oam_pos] = 0;
+    bytewise_extended_oam[oam_pos] = (xcoord >> 8) & 1;
     xcoord += 8;
   }
 }
 
-void LinkOam_DrawFootObject(int r4loc, uint8 oam_x, uint8 oam_y) {  // 8daed1
+void LinkOam_DrawFootObject(int r4loc, uint16 oam_x, uint8 oam_y) {  // 8daed1
   primary_water_grass_timer = (primary_water_grass_timer + 1) & 0xf;
   if (primary_water_grass_timer >= 9) {
     primary_water_grass_timer = 0;
@@ -1330,10 +1317,11 @@ void LinkOam_DrawFootObject(int r4loc, uint8 oam_x, uint8 oam_y) {  // 8daed1
   oam[0].y = oam_y;
   oam[1].y = oam_y;
 
-  WORD(bytewise_extended_oam[oam_pos]) = 0;
+  bytewise_extended_oam[oam_pos + 0] = (oam_x >> 8) & 1;
+  bytewise_extended_oam[oam_pos + 1] = ((oam_x + 8) >> 8) & 1;
 }
 
 void LinkOam_CalculateXOffsetRelativeLink(uint8 x) {  // 8dafc0
-  bit9_of_xcoord = (link_x_coord + (int8)x - BG2HOFS_copy2) >> 8 & 1;
+  bit9_of_xcoord = (ZeldaGetScreenX(link_x_coord + (int8)x) >> 8) & 1;
 }
 
