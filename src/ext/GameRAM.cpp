@@ -77,6 +77,7 @@ void GameRAM::ensureMultiplayerInitialized() {
 	copyRAMToPlayerState();
 
 	uint8_t* src_core_state = use_player2 ? player2_core_state : player1_core_state;
+	uint8_t* src_mid_state = use_player2 ? player2_mid_state : player1_mid_state;
 	uint8_t* src_action_state = use_player2 ? player2_action_state : player1_action_state;
 	uint8_t* src_prev_coord_state = use_player2 ? player2_prev_coord_state : player1_prev_coord_state;
 	uint8_t* src_special_exit_state = use_player2 ? player2_special_exit_state : player1_special_exit_state;
@@ -84,6 +85,7 @@ void GameRAM::ensureMultiplayerInitialized() {
 	uint8_t* src_cached_state = use_player2 ? player2_cached_state : player1_cached_state;
 
 	uint8_t* dst_core_state = use_player2 ? player1_core_state : player2_core_state;
+	uint8_t* dst_mid_state = use_player2 ? player1_mid_state : player2_mid_state;
 	uint8_t* dst_action_state = use_player2 ? player1_action_state : player2_action_state;
 	uint8_t* dst_prev_coord_state = use_player2 ? player1_prev_coord_state : player2_prev_coord_state;
 	uint8_t* dst_special_exit_state = use_player2 ? player1_special_exit_state : player2_special_exit_state;
@@ -91,6 +93,7 @@ void GameRAM::ensureMultiplayerInitialized() {
 	uint8_t* dst_cached_state = use_player2 ? player1_cached_state : player2_cached_state;
 
 	CopyPlayerStateRange(dst_core_state, src_core_state, GAME_RAM_PLAYER_CORE_STATE_SIZE);
+	CopyPlayerStateRange(dst_mid_state, src_mid_state, GAME_RAM_PLAYER_MID_STATE_SIZE);
 	CopyPlayerStateRange(dst_action_state, src_action_state, GAME_RAM_PLAYER_ACTION_STATE_SIZE);
 	CopyPlayerStateRange(dst_prev_coord_state, src_prev_coord_state, GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE);
 	CopyPlayerStateRange(dst_special_exit_state, src_special_exit_state, GAME_RAM_PLAYER_SPECIAL_EXIT_STATE_SIZE);
@@ -108,6 +111,7 @@ void GameRAM::invalidateMultiplayerState() {
 
 void GameRAM::copyRAMToPlayerState() {
 	uint8_t* core_state = use_player2 ? player2_core_state : player1_core_state;
+	uint8_t* mid_state = use_player2 ? player2_mid_state : player1_mid_state;
 	uint8_t* action_state = use_player2 ? player2_action_state : player1_action_state;
 	uint8_t* prev_coord_state = use_player2 ? player2_prev_coord_state : player1_prev_coord_state;
 	uint8_t* special_exit_state = use_player2 ? player2_special_exit_state : player1_special_exit_state;
@@ -115,6 +119,7 @@ void GameRAM::copyRAMToPlayerState() {
 	uint8_t* cached_state = use_player2 ? player2_cached_state : player1_cached_state;
 
 	CopyPlayerStateRange(core_state, &data[0x20], GAME_RAM_PLAYER_CORE_STATE_SIZE);
+	CopyPlayerStateRange(mid_state, &data[0x2C0], GAME_RAM_PLAYER_MID_STATE_SIZE);
 	CopyPlayerStateRange(action_state, &data[0x2D8], GAME_RAM_PLAYER_ACTION_STATE_SIZE);
 	CopyPlayerStateRange(prev_coord_state, &data[0xFC1], GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE);
 	CopyPlayerStateRange(special_exit_state, &data[0xC108], GAME_RAM_PLAYER_SPECIAL_EXIT_STATE_SIZE);
@@ -124,6 +129,7 @@ void GameRAM::copyRAMToPlayerState() {
 
 void GameRAM::copyPlayerStateToRAM() {
 	uint8_t* core_state = use_player2 ? player2_core_state : player1_core_state;
+	uint8_t* mid_state = use_player2 ? player2_mid_state : player1_mid_state;
 	uint8_t* action_state = use_player2 ? player2_action_state : player1_action_state;
 	uint8_t* prev_coord_state = use_player2 ? player2_prev_coord_state : player1_prev_coord_state;
 	uint8_t* special_exit_state = use_player2 ? player2_special_exit_state : player1_special_exit_state;
@@ -131,6 +137,7 @@ void GameRAM::copyPlayerStateToRAM() {
 	uint8_t* cached_state = use_player2 ? player2_cached_state : player1_cached_state;
 
 	CopyPlayerStateRange(&data[0x20], core_state, GAME_RAM_PLAYER_CORE_STATE_SIZE);
+	CopyPlayerStateRange(&data[0x2C0], mid_state, GAME_RAM_PLAYER_MID_STATE_SIZE);
 	CopyPlayerStateRange(&data[0x2D8], action_state, GAME_RAM_PLAYER_ACTION_STATE_SIZE);
 	CopyPlayerStateRange(&data[0xFC1], prev_coord_state, GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE);
 	CopyPlayerStateRange(&data[0xC108], special_exit_state, GAME_RAM_PLAYER_SPECIAL_EXIT_STATE_SIZE);
@@ -154,6 +161,8 @@ uint8_t* GameRAM::getPlayerStates() {
 	size_t offset = 0;
 	CopyPlayerStateRange(snapshot + offset, player1_core_state, GAME_RAM_PLAYER_CORE_STATE_SIZE);
 	offset += GAME_RAM_PLAYER_CORE_STATE_SIZE;
+	CopyPlayerStateRange(snapshot + offset, player1_mid_state, GAME_RAM_PLAYER_MID_STATE_SIZE);
+	offset += GAME_RAM_PLAYER_MID_STATE_SIZE;
 	CopyPlayerStateRange(snapshot + offset, player1_action_state, GAME_RAM_PLAYER_ACTION_STATE_SIZE);
 	offset += GAME_RAM_PLAYER_ACTION_STATE_SIZE;
 	CopyPlayerStateRange(snapshot + offset, player1_prev_coord_state, GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE);
@@ -166,6 +175,8 @@ uint8_t* GameRAM::getPlayerStates() {
 	offset += GAME_RAM_PLAYER_CACHED_STATE_SIZE;
 	CopyPlayerStateRange(snapshot + offset, player2_core_state, GAME_RAM_PLAYER_CORE_STATE_SIZE);
 	offset += GAME_RAM_PLAYER_CORE_STATE_SIZE;
+	CopyPlayerStateRange(snapshot + offset, player2_mid_state, GAME_RAM_PLAYER_MID_STATE_SIZE);
+	offset += GAME_RAM_PLAYER_MID_STATE_SIZE;
 	CopyPlayerStateRange(snapshot + offset, player2_action_state, GAME_RAM_PLAYER_ACTION_STATE_SIZE);
 	offset += GAME_RAM_PLAYER_ACTION_STATE_SIZE;
 	CopyPlayerStateRange(snapshot + offset, player2_prev_coord_state, GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE);
@@ -184,6 +195,8 @@ void GameRAM::loadState(const uint8_t* state) {
 	size_t offset = 0;
 	CopyPlayerStateRange(player1_core_state, state + offset, GAME_RAM_PLAYER_CORE_STATE_SIZE);
 	offset += GAME_RAM_PLAYER_CORE_STATE_SIZE;
+	CopyPlayerStateRange(player1_mid_state, state + offset, GAME_RAM_PLAYER_MID_STATE_SIZE);
+	offset += GAME_RAM_PLAYER_MID_STATE_SIZE;
 	CopyPlayerStateRange(player1_action_state, state + offset, GAME_RAM_PLAYER_ACTION_STATE_SIZE);
 	offset += GAME_RAM_PLAYER_ACTION_STATE_SIZE;
 	CopyPlayerStateRange(player1_prev_coord_state, state + offset, GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE);
@@ -196,6 +209,8 @@ void GameRAM::loadState(const uint8_t* state) {
 	offset += GAME_RAM_PLAYER_CACHED_STATE_SIZE;
 	CopyPlayerStateRange(player2_core_state, state + offset, GAME_RAM_PLAYER_CORE_STATE_SIZE);
 	offset += GAME_RAM_PLAYER_CORE_STATE_SIZE;
+	CopyPlayerStateRange(player2_mid_state, state + offset, GAME_RAM_PLAYER_MID_STATE_SIZE);
+	offset += GAME_RAM_PLAYER_MID_STATE_SIZE;
 	CopyPlayerStateRange(player2_action_state, state + offset, GAME_RAM_PLAYER_ACTION_STATE_SIZE);
 	offset += GAME_RAM_PLAYER_ACTION_STATE_SIZE;
 	CopyPlayerStateRange(player2_prev_coord_state, state + offset, GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE);

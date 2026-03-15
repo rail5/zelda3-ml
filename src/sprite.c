@@ -14,6 +14,62 @@
 #include "tile_detect.h"
 #include "sprite_main.h"
 #include "assets.h"
+
+#include "ext/GameRAM.h"
+
+static inline uint16 ReadPlayerCoreU16(const uint8 *core_state, int offset) {
+  return (uint16)(core_state[offset] | (core_state[offset + 1] << 8));
+}
+
+static inline void Multiplayer_SetActivePlayer2(bool use_player2) {
+  if (!game_ram.multiplayer_initialized)
+    return;
+  if (game_ram.use_player2 != use_player2)
+    switch_player();
+}
+
+static inline void Sprite_GetNearestPlayerXY(int k, uint16 *x_out, uint16 *y_out) {
+  if (!game_ram.multiplayer_initialized) {
+    *x_out = link_x_coord;
+    *y_out = link_y_coord;
+    return;
+  }
+
+  uint16 p1y = ReadPlayerCoreU16(game_ram.player1_core_state, 0);
+  uint16 p1x = ReadPlayerCoreU16(game_ram.player1_core_state, 2);
+  uint16 p2y = ReadPlayerCoreU16(game_ram.player2_core_state, 0);
+  uint16 p2x = ReadPlayerCoreU16(game_ram.player2_core_state, 2);
+
+  uint16 sx = Sprite_GetX(k);
+  uint16 sy = Sprite_GetY(k);
+  uint16 d1 = abs16((int16)(p1x - sx)) + abs16((int16)(p1y - sy));
+  uint16 d2 = abs16((int16)(p2x - sx)) + abs16((int16)(p2y - sy));
+
+  if (d2 < d1) {
+    *x_out = p2x;
+    *y_out = p2y;
+  } else {
+    *x_out = p1x;
+    *y_out = p1y;
+  }
+}
+
+static inline bool Sprite_IsPlayer2Nearest(int k) {
+  if (!game_ram.multiplayer_initialized)
+    return false;
+
+  uint16 p1y = ReadPlayerCoreU16(game_ram.player1_core_state, 0);
+  uint16 p1x = ReadPlayerCoreU16(game_ram.player1_core_state, 2);
+  uint16 p2y = ReadPlayerCoreU16(game_ram.player2_core_state, 0);
+  uint16 p2x = ReadPlayerCoreU16(game_ram.player2_core_state, 2);
+
+  uint16 sx = Sprite_GetX(k);
+  uint16 sy = Sprite_GetY(k);
+  uint16 d1 = abs16((int16)(p1x - sx)) + abs16((int16)(p1y - sy));
+  uint16 d2 = abs16((int16)(p2x - sx)) + abs16((int16)(p2y - sy));
+
+  return (d2 < d1);
+}
 static const uint16 kOamGetBufferPos_Tab0[6] = {0x171, 0x201, 0x31, 0xc1, 0x141, 0x1d1};
 static const uint16 kOamGetBufferPos_Tab1[48] = {
    0x30,  0x50,  0x80,  0xb0,  0xe0, 0x110, 0x140, 0x170, 0x1d0, 0x1d4, 0x1dc, 0x1e0, 0x1e4, 0x1ec, 0x1f0, 0x1f8,
@@ -1132,8 +1188,19 @@ void Sprite_Main() {  // 868328
   else
     set_when_damaging_enemies = 0;
   byte_7E0379 = 0;
-  link_unk_master_sword = 0;
-  link_prevent_from_moving = 0;
+  if (!game_ram.multiplayer_initialized) {
+    link_unk_master_sword = 0;
+    link_prevent_from_moving = 0;
+  } else {
+    bool orig = game_ram.use_player2;
+    Multiplayer_SetActivePlayer2(false);
+    link_unk_master_sword = 0;
+    link_prevent_from_moving = 0;
+    Multiplayer_SetActivePlayer2(true);
+    link_unk_master_sword = 0;
+    link_prevent_from_moving = 0;
+    Multiplayer_SetActivePlayer2(orig);
+  }
   if (sprite_alert_flag)
     sprite_alert_flag--;
   Ancilla_Main();
@@ -1211,10 +1278,17 @@ void Sprite_Get16BitCoords(int k) {  // 8684c1
 }
 
 void Sprite_ExecuteSingle(int k) {  // 8684e2
+  bool orig_player = game_ram.use_player2;
+  if (game_ram.multiplayer_initialized)
+    Multiplayer_SetActivePlayer2(Sprite_IsPlayer2Nearest(k));
+
   uint8 st = sprite_state[k];
   if (st != 0)
     Sprite_TimersAndOam(k);
   kSprite_ExecuteSingle[st](k);
+
+  if (game_ram.multiplayer_initialized)
+    Multiplayer_SetActivePlayer2(orig_player);
 }
 
 void Sprite_inactiveSprite(int k) {  // 868510
@@ -2170,19 +2244,93 @@ uint8 Sprite_DirectionToFaceLink(int k, PointU8 *coords_out) {  // 86eaa4
 }
 
 PairU8 Sprite_IsRightOfLink(int k) {  // 86ead1
-  uint16 x = link_x_coord - Sprite_GetX(k);
+  uint16 target_x, target_y;
+  Sprite_GetNearestPlayerXY(k, &target_x, &target_y);
+  (void)target_y;
+  uint16 x = target_x - Sprite_GetX(k);
   PairU8 rv = { (uint8)(sign16(x) ? 1 : 0), (uint8)x };
   return rv;
 }
 
 PairU8 Sprite_IsBelowLink(int k) {  // 86eae8
-  int t = BYTE(link_y_coord) + 8;
+  uint16 target_x, target_y;
+  Sprite_GetNearestPlayerXY(k, &target_x, &target_y);
+  (void)target_x;
+  int t = (uint8)target_y + 8;
   int u = (t & 0xff) + sprite_z[k];
   int v = (u & 0xff) - sprite_y_lo[k];
-  int w = HIBYTE(link_y_coord) - sprite_y_hi[k] - (v < 0);
+  int w = (target_y >> 8) - sprite_y_hi[k] - (v < 0);
   uint8 y = (w & 0xff) + (t >> 8) + (u >> 8);
   PairU8 rv = { (uint8)(sign8(y) ? 1 : 0), (uint8)v };
   return rv;
+}
+
+static bool Sprite_CheckDamageToLink_ignore_layer_Single(int k) {
+  uint8 carry, t;
+  if (sprite_flags4[k]) {
+    SpriteHitBox hitbox;
+    Link_SetupHitBox(&hitbox);
+
+    // Set hitbox to the sword hitbox if the item type is an absorbable
+    if (sprite_type[k] >= 0xd8 && sprite_type[k] <= 0xe6 && (enhanced_features0 & kFeatures0_CollectItemsWithSword))
+      Link_UpdateHitBoxWithSword(&hitbox);
+
+    Sprite_SetupHitBox(k, &hitbox);
+    carry = CheckIfHitBoxesOverlap(&hitbox);
+  } else {
+    carry = Sprite_SetupHitBox00(k);
+  }
+
+  if (sign8(sprite_flags2[k]))
+    return carry;
+
+  if (!carry || link_auxiliary_state)
+    return false;
+
+  if (link_is_bunny_mirror || sign8(link_state_bits) || !(sprite_flags5[k] & 0x20) || !link_shield_type)
+    goto if_3;
+  sprite_state[k] = 0;
+
+  t = button_b_frames ? kSpriteDamage_Tab2[link_direction_facing >> 1] : link_direction_facing;
+  if (t != kSpriteDamage_Tab3[sprite_D[k]]) {
+if_3:
+    Sprite_AttemptDamageToLinkPlusRecoil(k);
+    if (sprite_type[k] == 0xc)
+      Sprite_Func3(k);
+    return true;
+  }
+  SpriteSfx_QueueSfx2WithPan(k, 6);
+  Sprite_PlaceRupulseSpark_2(k);
+  if (sprite_type[k] == 0x95) {
+    SpriteSfx_QueueSfx3WithPan(k, 0x26);
+    return false;
+  } else if (sprite_type[k] == 0x9B) {
+    Sprite_Invert_XY_Speeds(k);
+    sprite_D[k] ^= 1;
+    sprite_ai_state[k]++;
+    sprite_state[k] = 9;
+    return false;
+  } else if (sprite_type[k] == 0x1B) { // arrow
+    Sprite_ScheduleForBreakage(k);
+    return false;  // unk ret val
+  } else if (sprite_type[k] == 0xc) {
+    Sprite_Func3(k);
+    return true;
+  } else {
+    return false;  // unk ret val
+  }
+}
+
+static bool Sprite_CheckDamageToLink_same_layer_Single(int k) {
+  if (link_is_on_lower_level != sprite_floor[k])
+    return false;
+  return Sprite_CheckDamageToLink_ignore_layer_Single(k);
+}
+
+static bool Sprite_CheckDamageToPlayer_1_Single(int k) {
+  if ((k ^ frame_counter) & 3 | sprite_hit_timer[k])
+    return false;
+  return Sprite_CheckDamageToLink_same_layer_Single(k);
 }
 
 PairU8 Sprite_IsRightOfLocation(int k, uint16 x) {  // 86eb0a
@@ -2523,77 +2671,76 @@ void Sprite_Func3(int k) {  // 86efda
 }
 
 bool Sprite_CheckDamageToLink(int k) {  // 86f145
-  if (link_disable_sprite_damage)
-    return false;
-  return Sprite_CheckDamageToPlayer_1(k);
+  if (!game_ram.multiplayer_initialized) {
+    if (link_disable_sprite_damage)
+      return false;
+    return Sprite_CheckDamageToPlayer_1_Single(k);
+  }
+
+  bool orig = game_ram.use_player2;
+  bool hit_any = false;
+
+  Multiplayer_SetActivePlayer2(false);
+  if (!link_disable_sprite_damage)
+    hit_any |= Sprite_CheckDamageToPlayer_1_Single(k);
+
+  Multiplayer_SetActivePlayer2(true);
+  if (!link_disable_sprite_damage)
+    hit_any |= Sprite_CheckDamageToPlayer_1_Single(k);
+
+  Multiplayer_SetActivePlayer2(orig);
+  return hit_any;
 }
 
 bool Sprite_CheckDamageToPlayer_1(int k) {  // 86f14a
-  if ((k ^ frame_counter) & 3 | sprite_hit_timer[k])
-    return false;
-  return Sprite_CheckDamageToLink_same_layer(k);
+  if (!game_ram.multiplayer_initialized)
+    return Sprite_CheckDamageToPlayer_1_Single(k);
+
+  bool orig = game_ram.use_player2;
+  bool hit_any = false;
+
+  Multiplayer_SetActivePlayer2(false);
+  hit_any |= Sprite_CheckDamageToPlayer_1_Single(k);
+
+  Multiplayer_SetActivePlayer2(true);
+  hit_any |= Sprite_CheckDamageToPlayer_1_Single(k);
+
+  Multiplayer_SetActivePlayer2(orig);
+  return hit_any;
 }
 
 bool Sprite_CheckDamageToLink_same_layer(int k) {  // 86f154
-  if (link_is_on_lower_level != sprite_floor[k])
-    return false;
-  return Sprite_CheckDamageToLink_ignore_layer(k);
+  if (!game_ram.multiplayer_initialized)
+    return Sprite_CheckDamageToLink_same_layer_Single(k);
+
+  bool orig = game_ram.use_player2;
+  bool hit_any = false;
+
+  Multiplayer_SetActivePlayer2(false);
+  hit_any |= Sprite_CheckDamageToLink_same_layer_Single(k);
+
+  Multiplayer_SetActivePlayer2(true);
+  hit_any |= Sprite_CheckDamageToLink_same_layer_Single(k);
+
+  Multiplayer_SetActivePlayer2(orig);
+  return hit_any;
 }
 
 bool Sprite_CheckDamageToLink_ignore_layer(int k) {  // 86f15c
-  uint8 carry, t;
-  if (sprite_flags4[k]) {
-    SpriteHitBox hitbox;
-    Link_SetupHitBox(&hitbox);
+  if (!game_ram.multiplayer_initialized)
+    return Sprite_CheckDamageToLink_ignore_layer_Single(k);
 
-    // Set hitbox to the sword hitbox if the item type is an absorbable
-    if (sprite_type[k] >= 0xd8 && sprite_type[k] <= 0xe6 && (enhanced_features0 & kFeatures0_CollectItemsWithSword))
-      Link_UpdateHitBoxWithSword(&hitbox);
+  bool orig = game_ram.use_player2;
+  bool hit_any = false;
 
-    Sprite_SetupHitBox(k, &hitbox);
-    carry = CheckIfHitBoxesOverlap(&hitbox);
-  } else {
-    carry = Sprite_SetupHitBox00(k);
-  }
+  Multiplayer_SetActivePlayer2(false);
+  hit_any |= Sprite_CheckDamageToLink_ignore_layer_Single(k);
 
-  if (sign8(sprite_flags2[k]))
-    return carry;
+  Multiplayer_SetActivePlayer2(true);
+  hit_any |= Sprite_CheckDamageToLink_ignore_layer_Single(k);
 
-  if (!carry || link_auxiliary_state)
-    return false;
-
-  if (link_is_bunny_mirror || sign8(link_state_bits) || !(sprite_flags5[k] & 0x20) || !link_shield_type)
-    goto if_3;
-  sprite_state[k] = 0;
-
-  t = button_b_frames ? kSpriteDamage_Tab2[link_direction_facing >> 1] : link_direction_facing;
-  if (t != kSpriteDamage_Tab3[sprite_D[k]]) {
-if_3:
-    Sprite_AttemptDamageToLinkPlusRecoil(k);
-    if (sprite_type[k] == 0xc)
-      Sprite_Func3(k);
-    return true;
-  }
-  SpriteSfx_QueueSfx2WithPan(k, 6);
-  Sprite_PlaceRupulseSpark_2(k);
-  if (sprite_type[k] == 0x95) {
-    SpriteSfx_QueueSfx3WithPan(k, 0x26);
-    return false;
-  } else if (sprite_type[k] == 0x9B) {
-    Sprite_Invert_XY_Speeds(k);
-    sprite_D[k] ^= 1;
-    sprite_ai_state[k]++;
-    sprite_state[k] = 9;
-    return false;
-  } else if (sprite_type[k] == 0x1B) { // arrow
-    Sprite_ScheduleForBreakage(k);
-    return false;  // unk ret val
-  } else if (sprite_type[k] == 0xc) {
-    Sprite_Func3(k);
-    return true;
-  } else {
-    return false;  // unk ret val
-  }
+  Multiplayer_SetActivePlayer2(orig);
+  return hit_any;
 }
 
 bool Sprite_SetupHitBox00(int k) {  // 86f1f6
@@ -2638,7 +2785,7 @@ bool Sprite_ReturnIfLiftedPermissive(int k) {  // 86f257
   }
 }
 
-uint8 Sprite_CheckDamageFromLink(int k) {  // 86f2b4
+static uint8 Sprite_CheckDamageFromLink_Single(int k) {  // 86f2b4
   if (sprite_hit_timer[k] & 0x80 || sprite_floor[k] != link_is_on_lower_level || player_oam_y_offset == 0x80)
     return 0;
 
@@ -2713,14 +2860,57 @@ getting_out:
   return kCheckDamageFromPlayer_Carry;
 }
 
+uint8 Sprite_CheckDamageFromLink(int k) {  // 86f2b4
+  if (!game_ram.multiplayer_initialized)
+    return Sprite_CheckDamageFromLink_Single(k);
+
+  bool orig = game_ram.use_player2;
+
+  Multiplayer_SetActivePlayer2(false);
+  uint8 res = Sprite_CheckDamageFromLink_Single(k);
+  if (!res) {
+    Multiplayer_SetActivePlayer2(true);
+    res = Sprite_CheckDamageFromLink_Single(k);
+  }
+
+  Multiplayer_SetActivePlayer2(orig);
+  return res;
+}
+
 void Sprite_AttemptDamageToLinkWithCollisionCheck(int k) {  // 86f3ca
   if ((k ^ frame_counter) & 1)
     return;
-  SpriteHitBox hb;
-  Sprite_DoHitBoxesFast(k, &hb);
-  Link_SetupHitBox_conditional(&hb);
-  if (CheckIfHitBoxesOverlap(&hb))
-    Sprite_AttemptDamageToLinkPlusRecoil(k);
+
+  if (!game_ram.multiplayer_initialized) {
+    SpriteHitBox hb;
+    Sprite_DoHitBoxesFast(k, &hb);
+    Link_SetupHitBox_conditional(&hb);
+    if (CheckIfHitBoxesOverlap(&hb))
+      Sprite_AttemptDamageToLinkPlusRecoil(k);
+    return;
+  }
+
+  bool orig = game_ram.use_player2;
+
+  Multiplayer_SetActivePlayer2(false);
+  {
+    SpriteHitBox hb;
+    Sprite_DoHitBoxesFast(k, &hb);
+    Link_SetupHitBox_conditional(&hb);
+    if (CheckIfHitBoxesOverlap(&hb))
+      Sprite_AttemptDamageToLinkPlusRecoil(k);
+  }
+
+  Multiplayer_SetActivePlayer2(true);
+  {
+    SpriteHitBox hb;
+    Sprite_DoHitBoxesFast(k, &hb);
+    Link_SetupHitBox_conditional(&hb);
+    if (CheckIfHitBoxesOverlap(&hb))
+      Sprite_AttemptDamageToLinkPlusRecoil(k);
+  }
+
+  Multiplayer_SetActivePlayer2(orig);
 }
 
 void Sprite_AttemptDamageToLinkPlusRecoil(int k) {  // 86f3db

@@ -19,12 +19,13 @@
 #include <stdint.h>
 
 #define GAME_RAM_PLAYER_CORE_STATE_SIZE 0x52
+#define GAME_RAM_PLAYER_MID_STATE_SIZE 0x18
 #define GAME_RAM_PLAYER_ACTION_STATE_SIZE 0xA8
 #define GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE 0x5
 #define GAME_RAM_PLAYER_SPECIAL_EXIT_STATE_SIZE 0x4
 #define GAME_RAM_PLAYER_EXIT_STATE_SIZE 0x4
 #define GAME_RAM_PLAYER_CACHED_STATE_SIZE 0x27
-#define GAME_RAM_SNAPSHOT_SIZE ((GAME_RAM_PLAYER_CORE_STATE_SIZE + GAME_RAM_PLAYER_ACTION_STATE_SIZE + \
+#define GAME_RAM_SNAPSHOT_SIZE ((GAME_RAM_PLAYER_CORE_STATE_SIZE + GAME_RAM_PLAYER_MID_STATE_SIZE + GAME_RAM_PLAYER_ACTION_STATE_SIZE + \
 	GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE + GAME_RAM_PLAYER_SPECIAL_EXIT_STATE_SIZE + \
 	GAME_RAM_PLAYER_EXIT_STATE_SIZE + GAME_RAM_PLAYER_CACHED_STATE_SIZE) * 2 + 1)
 
@@ -38,6 +39,7 @@ struct GameRAM {
 	uint8_t data[131072];
 
 	uint8_t player1_core_state[GAME_RAM_PLAYER_CORE_STATE_SIZE];
+	uint8_t player1_mid_state[GAME_RAM_PLAYER_MID_STATE_SIZE];
 	uint8_t player1_action_state[GAME_RAM_PLAYER_ACTION_STATE_SIZE];
 	uint8_t player1_prev_coord_state[GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE];
 	uint8_t player1_special_exit_state[GAME_RAM_PLAYER_SPECIAL_EXIT_STATE_SIZE];
@@ -45,6 +47,7 @@ struct GameRAM {
 	uint8_t player1_cached_state[GAME_RAM_PLAYER_CACHED_STATE_SIZE];
 
 	uint8_t player2_core_state[GAME_RAM_PLAYER_CORE_STATE_SIZE];
+	uint8_t player2_mid_state[GAME_RAM_PLAYER_MID_STATE_SIZE];
 	uint8_t player2_action_state[GAME_RAM_PLAYER_ACTION_STATE_SIZE];
 	uint8_t player2_prev_coord_state[GAME_RAM_PLAYER_PREV_COORD_STATE_SIZE];
 	uint8_t player2_special_exit_state[GAME_RAM_PLAYER_SPECIAL_EXIT_STATE_SIZE];
@@ -57,7 +60,7 @@ struct GameRAM {
 	#ifdef __cplusplus
 	uint8_t& operator[](size_t index);
 
-	GameRAM() : data{}, player1_core_state{}, player1_action_state{}, player1_prev_coord_state{}, player1_special_exit_state{}, player1_exit_state{}, player1_cached_state{}, player2_core_state{}, player2_action_state{}, player2_prev_coord_state{}, player2_special_exit_state{}, player2_exit_state{}, player2_cached_state{}, use_player2(false), multiplayer_initialized(false) {} // zero-initialize
+	GameRAM() : data{}, player1_core_state{}, player1_mid_state{}, player1_action_state{}, player1_prev_coord_state{}, player1_special_exit_state{}, player1_exit_state{}, player1_cached_state{}, player2_core_state{}, player2_mid_state{}, player2_action_state{}, player2_prev_coord_state{}, player2_special_exit_state{}, player2_exit_state{}, player2_cached_state{}, use_player2(false), multiplayer_initialized(false) {} // zero-initialize
 
 	void setPlayer(int player); // 1 or 2
 	void togglePlayer();
