@@ -4,20 +4,34 @@ This is a personal fork of [snesrev's Alttp PC port](https://github.com/snesrev/
 
 I have not built or tested any changes outside of GNU/Linux, and I don't imagine this will run on Windows or MacOS without some work. I'm not familiar enough with those operating systems to provide support.
 
+## Multiplayer status (experimental)
+
+This fork is exploring **local 2-player co-op**.
+
+Current behavior (as of 2026-03-15):
+
+ - Two independent inputs are wired through the engine (`ZeldaRunFrame(inputs1, inputs2)`).
+ - Link logic is executed for **both players** each frame via `Link_MainForAllPlayers()` (used in overworld + dungeon player-control modules).
+ - A second Link is rendered (host-only extra OBJ tile storage; SNES VRAM layout stays unchanged).
+ - Both players can generally **hit enemies** and can generally **be hit** (damage checks iterate both players).
+ - The viewport is currently forced wider for experiments (extended aspect ratio / extra side-space).
+
+This doesn't mean the multiplayer "works." Not only does it not "work," I don't even understand yet *why* it doesn't "work." But maybe we'll get there.
+
+## Fork features
+
 So far, this fork has added:
 
  - A button remapping GUI using ImGui
  - Support for multiple controllers with independent button mappings
  - Support for SDL_Joystick devices (e.g., off-brand controllers that don't register as SDL_GameController)
- - GUI Savestate support
+ - GUI Savestate support (including additional per-player snapshot state used by the multiplayer experiments)
  - Some makefile conveniences
 
 Less visible differences:
- - A fundamental refactoring of the program's low-level memory model
-   - The original program stored all of the game RAM in a single large array, and used macros to access individual variables. This was presumably done to accurately mimic the original SNES memory map.
-   - This fork replaces this with a (hidden) C++ data structure than can be accessed and indexed in the same way, but allows for optionally-added internal logic on access.
-   - One thing that may be possible with this, for example, is to override accesses to certain memory regions. E.g., if the game asks for the memory stored at address X, we could choose to return the value actually stored there in the game RAM, or we might choose to compute a new value on-the-fly, etc.
-   - Hopefully, this will make it easier to add multiplayer support in the future, by overriding access to memory regions associated with the player state, so that we can keep multiple players' states separately and return the appropriate one based on context.
+
+ - A refactoring of the program's low-level RAM model (`src/ext/GameRAM.*`) that keeps *some* Link/player-local RAM regions in per-player copies, and swaps them into the live RAM view when switching the "active" player.
+   - This is now used by the experimental multiplayer work (dual-Link update, per-sprite nearest-player targeting, etc.).
 
 ## Build Instructions
 
