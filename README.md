@@ -16,8 +16,6 @@ Current behavior (as of 2026-03-15):
  - Both players can generally **hit enemies** and can generally **be hit** (damage checks iterate both players).
  - The viewport is currently forced wider for experiments (extended aspect ratio / extra side-space).
 
-This doesn't mean the multiplayer "works." Not only does it not "work," I don't even understand yet *why* it doesn't "work." But maybe we'll get there.
-
 ## Fork features
 
 So far, this fork has added:
