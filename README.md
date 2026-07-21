@@ -16,8 +16,6 @@ Current behavior (as of 2026-03-15):
  - Both players can generally **hit enemies** and can generally **be hit** (damage checks iterate both players).
  - The viewport is currently forced wider for experiments (extended aspect ratio / extra side-space).
 
-## Fork features
-
 So far, this fork has added:
 
  - A button remapping GUI using ImGui
